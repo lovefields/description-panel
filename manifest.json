@@ -1,0 +1,13 @@
+{
+    "name": "page.info.palnner.series",
+    "id": "1172775129625785512",
+    "api": "1.0.0",
+    "main": "dist/code.js",
+    "editorType": ["figma"],
+    "containsWidget": true,
+    "widgetApi": "1.0.0",
+    "ui": {
+        "main": "edit.html",
+        "notice": "view.html"
+    }
+}
