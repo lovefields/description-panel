@@ -1,0 +1,61 @@
+<div hidden class="new-box">
+    <div class="row">
+        <p class="label">new</p>
+
+        <div class="content">
+            <input type="text" class="input" />
+        </div>
+    </div>
+</div>
+
+<div hidden class="edit-box">eidt box</div>
+
+<div hidden class="view-box">view box</div>
+
+<div hidden class="error-box">
+    <p class="message">Something wrong!</p>
+</div>
+
+<script>
+    const $editPage = document.querySelector(".edit-box");
+    const $newPage = document.querySelector(".new-box");
+    const $viewPage = document.querySelector(".view-box");
+    const $errorPage = document.querySelector(".error-box");
+
+    function setPage(data) {
+        switch (data.mode) {
+            case "new":
+                $newPage.removeAttribute("hidden");
+                break;
+            case "edit":
+                $editPage.removeAttribute("hidden");
+                break;
+            case "view":
+                $viewPage.removeAttribute("hidden");
+                break;
+            default:
+                $errorPage.removeAttribute("hidden");
+        }
+    }
+
+    window.onmessage = (event) => {
+        if (event.data.pluginMessage !== "") {
+            let pageData = JSON.parse(event.data.pluginMessage);
+
+            setPage(pageData);
+            console.log(pageData);
+        } else {
+            $errorPage.removeAttribute("hidden");
+        }
+    };
+</script>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .edit-box {
+    }
+</style>

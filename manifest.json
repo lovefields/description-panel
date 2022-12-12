@@ -6,8 +6,5 @@
     "editorType": ["figma"],
     "containsWidget": true,
     "widgetApi": "1.0.0",
-    "ui": {
-        "main": "edit.html",
-        "notice": "view.html"
-    }
+    "ui": "ui.html"
 }
