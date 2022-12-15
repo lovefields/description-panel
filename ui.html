@@ -1,14 +1,39 @@
 <div hidden class="new-box">
     <div class="row">
-        <p class="label">new</p>
+        <p class="title">Type</p>
+        <p class="caption">Choose the type you need.</p>
 
         <div class="content">
-            <input type="text" class="input" />
+            <label class="radio"><input type="radio" name="type" class="input-type" value="visible" checked /><span class="text">Visible info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="invisible" /><span class="text">Invisible info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="tracking" /><span class="text">Tracking info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="design" /><span class="text">Design info</span></label>
         </div>
+    </div>
+
+    <div class="row">
+        <p class="title">Description</p>
+        <p class="caption">Please write a description of the screen.</p>
+
+        <div class="content">
+            <textarea class="textarea"></textarea>
+        </div>
+    </div>
+
+    <div class="row">
+        <button class="btn-cancel">Cancel</button>
+        <button class="btn-add">Add</button>
     </div>
 </div>
 
-<div hidden class="edit-box">eidt box</div>
+<div hidden class="edit-box">
+    <div class="row">eidt box</div>
+
+    <div class="row">
+        <button class="btn-cancel">Cancel</button>
+        <button class="btn-edit">Add</button>
+    </div>
+</div>
 
 <div hidden class="view-box">view box</div>
 
@@ -21,9 +46,18 @@
     const $newPage = document.querySelector(".new-box");
     const $viewPage = document.querySelector(".view-box");
     const $errorPage = document.querySelector(".error-box");
+    const $btnCancel = document.querySelectorAll(".btn-cancel");
+    const $btnAdd = document.querySelector(".btn-add");
 
-    function setPage(data) {
-        switch (data.mode) {
+    // close window
+    $btnCancel.forEach(($el) => {
+        $el.addEventListener("click", () => {
+            parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+        });
+    });
+
+    function setPage(mode) {
+        switch (mode) {
             case "new":
                 $newPage.removeAttribute("hidden");
                 break;
@@ -42,12 +76,28 @@
         if (event.data.pluginMessage !== "") {
             let pageData = JSON.parse(event.data.pluginMessage);
 
-            setPage(pageData);
+            setPage(pageData.mode);
             console.log(pageData);
         } else {
             $errorPage.removeAttribute("hidden");
         }
     };
+
+    // add new data
+    $btnAdd.addEventListener("click", function () {
+        let content = document.querySelector(".new-box .textarea").value.trim();
+        let data = JSON.stringify({
+            id: null,
+            type: document.querySelector(".new-box .input-type:checked").value,
+            content: content,
+        });
+
+        if (content !== "") {
+            parent.postMessage({ pluginMessage: { type: "add", data: data } }, "*");
+        } else {
+            alert("Write description please.");
+        }
+    });
 </script>
 
 <style>
