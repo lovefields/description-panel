@@ -1,17 +1,17 @@
-<div hidden class="new-box">
-    <div class="row">
+<div class="new-box">
+    <div class="row type-select-area">
         <p class="title">Type</p>
         <p class="caption">Choose the type you need.</p>
 
         <div class="content">
-            <label class="radio"><input type="radio" name="type" class="input-type" value="visible" checked /><span class="text">Visible info</span></label>
-            <label class="radio"><input type="radio" name="type" class="input-type" value="invisible" /><span class="text">Invisible info</span></label>
-            <label class="radio"><input type="radio" name="type" class="input-type" value="tracking" /><span class="text">Tracking info</span></label>
-            <label class="radio"><input type="radio" name="type" class="input-type" value="design" /><span class="text">Design info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="visible" checked /><span class="path"></span><span class="text --visible">Visible info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="invisible" /><span class="path"></span><span class="text --invisible">Invisible info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="tracking" /><span class="path"></span><span class="text --tracking">Tracking info</span></label>
+            <label class="radio"><input type="radio" name="type" class="input-type" value="design" /><span class="path"></span><span class="text --design">Design info</span></label>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row description-write-area">
         <p class="title">Description</p>
         <p class="caption">Please write a description of the screen.</p>
 
@@ -20,25 +20,46 @@
         </div>
     </div>
 
-    <div class="row">
-        <button class="btn-cancel">Cancel</button>
-        <button class="btn-add">Add</button>
+    <div class="row btn-area">
+        <button class="btn btn-cancel --cancel">Cancel</button>
+        <button class="btn btn-save">Add</button>
     </div>
 </div>
 
-<div hidden class="edit-box">
-    <div class="row">eidt box</div>
+<div class="edit-box">
+    <div class="row top-info-area">
+        <p class="number"></p>
+        <p class="type"></p>
+    </div>
 
-    <div class="row">
-        <button class="btn-cancel">Cancel</button>
-        <button class="btn-edit">Add</button>
+    <div class="row description-write-area">
+        <p class="title">Description</p>
+        <p class="caption">Please write a description of the screen.</p>
+
+        <div class="content">
+            <textarea class="textarea"></textarea>
+        </div>
+    </div>
+
+    <div class="row btn-area">
+        <button class="btn btn-cancel --cancel">Cancel</button>
+        <button class="btn btn-save">Save</button>
     </div>
 </div>
 
-<div hidden class="view-box">view box</div>
+<div class="view-box">
+    <div class="row top-info-area">
+        <p class="number"></p>
+        <p class="type"></p>
+    </div>
 
-<div hidden class="error-box">
-    <p class="message">Something wrong!</p>
+    <div class="row description-info-area"></div>
+</div>
+
+<div class="error-box">
+    <p class="message">Something Wrong!</p>
+    <p class="message">‘-’</p>
+    <button class="btn-cancel">Close</button>
 </div>
 
 <script>
@@ -47,7 +68,14 @@
     const $viewPage = document.querySelector(".view-box");
     const $errorPage = document.querySelector(".error-box");
     const $btnCancel = document.querySelectorAll(".btn-cancel");
-    const $btnAdd = document.querySelector(".btn-add");
+    const $btnSave = document.querySelectorAll(".btn-save");
+
+    Object.defineProperty(String.prototype, "capitalize", {
+        value: function () {
+            return this.charAt(0).toUpperCase() + this.slice(1);
+        },
+        enumerable: false,
+    });
 
     // close window
     $btnCancel.forEach(($el) => {
@@ -56,19 +84,28 @@
         });
     });
 
-    function setPage(mode) {
-        switch (mode) {
+    function setPage(data) {
+        switch (data.mode) {
             case "new":
-                $newPage.removeAttribute("hidden");
+                $newPage.classList.add("--active");
                 break;
             case "edit":
-                $editPage.removeAttribute("hidden");
+                $editPage.classList.add("--active");
+                $editPage.querySelector(".top-info-area").classList.add(`--${data.type}`);
+                $editPage.querySelector(".top-info-area .number").textContent = data.id;
+                $editPage.querySelector(".top-info-area .type").textContent = data.type.capitalize();
+                $editPage.querySelector(".description-write-area .textarea").value = data.content;
                 break;
             case "view":
-                $viewPage.removeAttribute("hidden");
+                console.log(data.content);
+                $viewPage.classList.add("--active");
+                $viewPage.querySelector(".top-info-area").classList.add(`--${data.type}`);
+                $viewPage.querySelector(".top-info-area .number").textContent = data.id;
+                $viewPage.querySelector(".top-info-area .type").textContent = data.type.capitalize();
+                $viewPage.querySelector(".description-info-area").innerHTML = data.content.replace(/\n/g,'<br>');
                 break;
             default:
-                $errorPage.removeAttribute("hidden");
+                $errorPage.classList.add("--active");
         }
     }
 
@@ -76,36 +113,292 @@
         if (event.data.pluginMessage !== "") {
             let pageData = JSON.parse(event.data.pluginMessage);
 
-            setPage(pageData.mode);
-            console.log(pageData);
+            setPage(pageData);
+
+            // add new data
+            $btnSave.forEach(($el) => {
+                $el.addEventListener("click", function () {
+                    if (pageData.mode == "new") {
+                        let content = document.querySelector(".new-box .textarea").value.trim();
+                        let data = JSON.stringify({
+                            id: null,
+                            type: document.querySelector(".new-box .input-type:checked").value,
+                            content: content,
+                        });
+
+                        if (content !== "") {
+                            parent.postMessage({ pluginMessage: { type: "add", data: data } }, "*");
+                        } else {
+                            alert("Write description please.");
+                        }
+                    }
+
+                    if (pageData.mode == "edit") {
+                        let content = document.querySelector(".edit-box .textarea").value.trim();
+                        let data = JSON.stringify({
+                            id: pageData.id,
+                            type: pageData.type,
+                            content: content,
+                        });
+
+                        if (content !== "") {
+                            parent.postMessage({ pluginMessage: { type: "edit", data: data } }, "*");
+                        } else {
+                            alert("Write description please.");
+                        }
+                    }
+                });
+            });
         } else {
             $errorPage.removeAttribute("hidden");
         }
     };
-
-    // add new data
-    $btnAdd.addEventListener("click", function () {
-        let content = document.querySelector(".new-box .textarea").value.trim();
-        let data = JSON.stringify({
-            id: null,
-            type: document.querySelector(".new-box .input-type:checked").value,
-            content: content,
-        });
-
-        if (content !== "") {
-            parent.postMessage({ pluginMessage: { type: "add", data: data } }, "*");
-        } else {
-            alert("Write description please.");
-        }
-    });
 </script>
 
 <style>
     body {
         margin: 0;
         padding: 0;
+        font-family: "Noto Sans", sans-serif;
     }
 
-    .edit-box {
+    .new-box,
+    .edit-box,
+    .view-box,
+    .error-box {
+        display: none;
+        flex-direction: column;
+        row-gap: 20px;
+        padding: 20px;
+    }
+
+    .error-box {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 50px;
+    }
+
+    .error-box .message {
+        color: #333;
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .error-box .btn-cancel {
+        width: 100%;
+        height: 35px;
+        background: #464646;
+        color: #fff;
+        border-radius: 5px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: bold;
+        line-height: 35px;
+    }
+
+    .new-box.--active,
+    .edit-box.--active,
+    .view-box.--active,
+    .error-box.--active {
+        display: flex;
+    }
+
+    .row .title {
+        margin: 0 0 4px;
+        color: #333;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .row .caption {
+        margin: 0;
+        color: #949494;
+        font-size: 14px;
+    }
+
+    .type-select-area .content {
+        display: flex;
+        flex-direction: column;
+        row-gap: 10px;
+        margin-top: 10px;
+    }
+
+    .type-select-area .radio {
+        display: flex;
+        align-items: center;
+        column-gap: 6px;
+    }
+
+    .type-select-area .radio .input-type {
+        display: none;
+    }
+
+    .type-select-area .radio .path {
+        display: block;
+        position: relative;
+        width: 12px;
+        height: 12px;
+        border: 1px solid #e0d7fb;
+        border-radius: 50%;
+    }
+
+    .type-select-area .radio .input-type:checked ~ .path {
+        border-color: #835eee;
+    }
+
+    .type-select-area .radio .input-type:checked ~ .path::before {
+        display: block;
+        content: "";
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        right: 1px;
+        bottom: 1px;
+        background: #835eee;
+        border-radius: 50%;
+    }
+
+    .type-select-area .radio .text {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .type-select-area .radio .text.--visible {
+        background: #f0ebfd;
+        color: #6436ea;
+    }
+
+    .type-select-area .radio .text.--invisible {
+        background: #ffefea;
+        color: #f66134;
+    }
+
+    .type-select-area .radio .text.--tracking {
+        background: #ecf7ff;
+        color: #47b6fe;
+    }
+
+    .type-select-area .radio .text.--design {
+        background: #e9faef;
+        color: #38c66b;
+    }
+
+    .description-write-area .content {
+        margin-top: 10px;
+    }
+
+    .description-write-area .textarea {
+        width: 100%;
+        height: 150px;
+        padding: 8px 12px;
+        border: 1px solid #d1c3f9;
+        font-size: 16px;
+        line-height: 1.5;
+        box-sizing: border-box;
+        outline: none;
+        resize: none;
+    }
+
+    .btn-area {
+        display: flex;
+        column-gap: 10px;
+    }
+
+    .btn-area .btn {
+        width: 100%;
+        height: 35px;
+        background: #6436ea;
+        color: #fff;
+        border: 0;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 35px;
+        cursor: pointer;
+    }
+
+    .btn-area .btn.--cancel {
+        background: #f0ebfd;
+        color: #b29bf5;
+    }
+
+    .top-info-area {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .top-info-area .number {
+        width: 28px;
+        height: 28px;
+        margin: 0;
+        color: #fff;
+        border-radius: 50%;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 30px;
+    }
+
+    .top-info-area .type {
+        display: inline-block;
+        margin: 0;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .top-info-area.--visible .number {
+        background: #6436ea;
+    }
+
+    .top-info-area.--visible .type {
+        background: #f0ebfd;
+        color: #6436ea;
+    }
+
+    .top-info-area.--invisible .number {
+        background: #f66134;
+    }
+
+    .top-info-area.--invisible .type {
+        background: #ffefea;
+        color: #f66134;
+    }
+
+    .top-info-area.--tracking .number {
+        background: #47b6fe;
+    }
+
+    .top-info-area.--tracking .type {
+        background: #ecf7ff;
+        color: #47b6fe;
+    }
+
+    .top-info-area.--design .number {
+        background: #38c66b;
+    }
+
+    .top-info-area.--design .type {
+        background: #e9faef;
+        color: #38c66b;
+    }
+
+    .description-info-area {
+        height: 300px;
+        padding: 4px 8px;
+        background: #fafafa;
+        color: #616161;
+        border-radius: 5px;
+        font-size: 16px;
+        line-height: 1.5;
+        overflow-y: auto;
     }
 </style>

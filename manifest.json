@@ -1,6 +1,6 @@
 {
-    "name": "page.info.palnner.series",
-    "id": "1172775129625785512",
+    "name": "description.pannel",
+    "id": "1185398404791594053",
     "api": "1.0.0",
     "main": "dist/code.js",
     "editorType": ["figma"],
