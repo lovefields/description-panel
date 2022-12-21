@@ -1,5 +1,3 @@
-// This is a counter widget with buttons to increment and decrement the number.
-
 const { widget } = figma;
 const { useWidgetId, useSyncedState, usePropertyMenu, AutoLayout, Text, Rectangle, Input, useEffect } = widget;
 
@@ -9,6 +7,19 @@ Object.defineProperty(String.prototype, "capitalize", {
     },
     enumerable: false,
 });
+
+type descriptionType = "visible" | "invisible" | "tracking" | "design";
+
+// interface widgetData {
+//     key: descriptionType;
+//     value: descriptionItem[];
+// }
+
+interface descriptionItem {
+    id: number;
+    type: descriptionType;
+    content: string;
+}
 
 function plannerWidget() {
     const [widgetType] = useSyncedState("widgetType", "parent");
@@ -31,9 +42,11 @@ function plannerWidget() {
     let widgetId = useWidgetId();
 
     // data arrangement
-    function arrangementData(data) {
-        Object.entries(data).map(([key, value]) => {
-            value.forEach((row, i) => {
+    function arrangementData(data: { [key: string]: descriptionItem[] }) {
+        let keyList = Object.keys(data);
+
+        keyList.map((key) => {
+            data[key].map((value: descriptionItem, i: number) => {
                 data[key][i].id = i + 1;
             });
         });
@@ -41,8 +54,9 @@ function plannerWidget() {
         return data;
     }
 
-    function deleteData(id, type) {
-        const allWidgetNodes: WidgetNode[] = figma.currentPage.findAll((node) => {
+    function deleteData(id: number, type: string) {
+        const allNode: any[] = figma.currentPage.findAll();
+        const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
             return node.type === "WIDGET";
         });
 
@@ -83,11 +97,13 @@ function plannerWidget() {
     }
 
     let count = 0;
-    for (let [key, value] of Object.entries(widgetDataJson)) {
-        if (value.length > 0) {
+    let keyList = Object.keys(widgetDataJson);
+
+    keyList.map((key) => {
+        if (widgetDataJson[key].length > 0) {
             count += 1;
         }
-    }
+    });
 
     if (count == 0) {
         count = 1;
@@ -97,10 +113,11 @@ function plannerWidget() {
 
     function listStructure() {
         let noData = true;
-        let column = Object.entries(widgetDataJson).map(([key, value]) => {
-            if (value.length > 0) {
+        let keyList = Object.keys(widgetDataJson);
+        let column = keyList.map((key) => {
+            if (widgetDataJson[key].length > 0) {
                 noData = false;
-                let item = value.map((row) => {
+                let item = widgetDataJson[key].map((row: descriptionItem) => {
                     return itemStructure(row);
                 });
 
@@ -149,7 +166,7 @@ function plannerWidget() {
         }
     }
 
-    function itemStructure(data) {
+    function itemStructure(data: descriptionItem) {
         let bgColor = "";
         let textColor = "";
 
@@ -188,7 +205,7 @@ function plannerWidget() {
             >
                 <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"}>
                     <AutoLayout name="pointer" width={28} height={28} fill={textColor} cornerRadius={30} horizontalAlignItems={"center"} verticalAlignItems={"center"}>
-                        <Text name="number" fill={"#fff"} fontSize={16} fontWeigth={700}>
+                        <Text name="number" fill={"#fff"} fontSize={16} fontWeight={700}>
                             {data.id}
                         </Text>
                     </AutoLayout>
@@ -203,8 +220,8 @@ function plannerWidget() {
                         }}
                         cornerRadius={5}
                     >
-                        <Text name="type" fill={textColor} fontSize={14} fontWeigth={700}>
-                            {data.type.capitalize()}
+                        <Text name="type" fill={textColor} fontSize={14} fontWeight={700}>
+                            {data.type.charAt(0).toUpperCase() + data.type.slice(1)}
                         </Text>
                     </AutoLayout>
                 </AutoLayout>
@@ -312,7 +329,8 @@ function plannerWidget() {
                 widgetDataJson[data.type][data.id - 1] = data;
                 setData();
 
-                const allWidgetNodes: WidgetNode[] = figma.currentPage.findAll((node) => {
+                const allNode: any[] = figma.currentPage.findAll();
+                const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
                     return node.type === "WIDGET";
                 });
 
@@ -340,7 +358,8 @@ function plannerWidget() {
 
             if (msg.type === "pointer") {
                 let data = JSON.parse(msg.data);
-                const allWidgetNodes: WidgetNode[] = figma.currentPage.findAll((node) => {
+                const allNode: any[] = figma.currentPage.findAll();
+                const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
                     return node.type === "WIDGET";
                 });
 
@@ -348,7 +367,7 @@ function plannerWidget() {
                     return node.widgetId === figma.widgetId;
                 });
 
-                const thisWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
+                const thisWidgetNode: WidgetNode = myWidgetNodes.filter((node) => {
                     return node.id === widgetId;
                 })[0];
 
@@ -397,7 +416,8 @@ function plannerWidget() {
                 }
 
                 if (propertyName == "new") {
-                    const allWidgetNodes: WidgetNode[] = figma.currentPage.findAll((node) => {
+                    const allNode: any[] = figma.currentPage.findAll();
+                    const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
                         return node.type === "WIDGET";
                     });
 
@@ -405,7 +425,7 @@ function plannerWidget() {
                         return node.widgetId === figma.widgetId;
                     });
 
-                    const thisWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
+                    const thisWidgetNode: WidgetNode = myWidgetNodes.filter((node) => {
                         return node.id === widgetId;
                     })[0];
 
