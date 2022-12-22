@@ -1,19 +1,7 @@
 const { widget } = figma;
-const { useWidgetId, useSyncedState, usePropertyMenu, AutoLayout, Text, Rectangle, Input, useEffect } = widget;
-
-Object.defineProperty(String.prototype, "capitalize", {
-    value: function () {
-        return this.charAt(0).toUpperCase() + this.slice(1);
-    },
-    enumerable: false,
-});
+const { useWidgetId, useSyncedState, usePropertyMenu, AutoLayout, Text, Input, useEffect } = widget;
 
 type descriptionType = "visible" | "invisible" | "tracking" | "design";
-
-// interface widgetData {
-//     key: descriptionType;
-//     value: descriptionItem[];
-// }
 
 interface descriptionItem {
     id: number;
@@ -109,7 +97,7 @@ function plannerWidget() {
         count = 1;
     }
 
-    let widgetWidth = 400 * count;
+    let widgetWidth = 450 * count;
 
     function listStructure() {
         let noData = true;
@@ -289,7 +277,7 @@ function plannerWidget() {
                     <AutoLayout
                         width={"fill-parent"}
                         height={35}
-                        fill={"#6436EA"}
+                        fill="#6436EA"
                         cornerRadius={5}
                         horizontalAlignItems={"center"}
                         verticalAlignItems={"center"}
