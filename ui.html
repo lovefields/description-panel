@@ -102,7 +102,7 @@
                 $viewPage.querySelector(".top-info-area").classList.add(`--${data.type}`);
                 $viewPage.querySelector(".top-info-area .number").textContent = data.id;
                 $viewPage.querySelector(".top-info-area .type").textContent = data.type.capitalize();
-                $viewPage.querySelector(".description-info-area").innerHTML = data.content.replace(/\n/g,'<br>');
+                $viewPage.querySelector(".description-info-area").innerHTML = data.content.replace(/\n/g, "<br>");
                 break;
             default:
                 $errorPage.classList.add("--active");
@@ -119,7 +119,8 @@
             $btnSave.forEach(($el) => {
                 $el.addEventListener("click", function () {
                     if (pageData.mode == "new") {
-                        let content = document.querySelector(".new-box .textarea").value.trim();
+                        let $textarea = document.querySelector(".new-box .textarea");
+                        let content = $textarea.value.trim();
                         let data = JSON.stringify({
                             id: null,
                             type: document.querySelector(".new-box .input-type:checked").value,
@@ -129,12 +130,13 @@
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "add", data: data } }, "*");
                         } else {
-                            alert("Write description please.");
+                            $textarea.classList.add("--error");
                         }
                     }
 
                     if (pageData.mode == "edit") {
-                        let content = document.querySelector(".edit-box .textarea").value.trim();
+                        let $textarea = document.querySelector(".edit-box .textarea");
+                        let content = $textarea.value.trim();
                         let data = JSON.stringify({
                             id: pageData.id,
                             type: pageData.type,
@@ -144,7 +146,7 @@
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "edit", data: data } }, "*");
                         } else {
-                            alert("Write description please.");
+                            $textarea.classList.add("--error");
                         }
                     }
                 });
@@ -302,6 +304,10 @@
         box-sizing: border-box;
         outline: none;
         resize: none;
+    }
+
+    .description-write-area .textarea.--error {
+        border-color: red;
     }
 
     .btn-area {

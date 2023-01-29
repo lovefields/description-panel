@@ -42,6 +42,38 @@ function plannerWidget() {
         return data;
     }
 
+    // going to number
+    function goToNumber(id: number, type: string) {
+        const allNode: any[] = figma.currentPage.findAll();
+        const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
+            return node.type === "WIDGET";
+        });
+
+        const myWidgetNodes: WidgetNode[] = allWidgetNodes.filter((node) => {
+            return node.widgetId === figma.widgetId;
+        });
+
+        const childWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
+            return node.widgetSyncedState.parentId === widgetId;
+        });
+
+        let targetNode: WidgetNode[] = [];
+        childWidgetNode.forEach((child) => {
+            let childType = child.widgetSyncedState.dataType;
+            let childId = child.widgetSyncedState.dataId;
+
+            if (childId == id && childType == type) {
+                targetNode.push(child);
+            }
+        });
+
+        if (targetNode.length == 0) {
+            figma.notify("You didn't have this Description Number pointer.");
+        } else {
+            figma.viewport.scrollAndZoomIntoView(targetNode);
+        }
+    }
+
     function deleteData(id: number, type: string) {
         const allNode: any[] = figma.currentPage.findAll();
         const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
@@ -147,8 +179,25 @@ function plannerWidget() {
             );
         } else {
             return (
-                <AutoLayout name="list-area" width={"fill-parent"} spacing={20}>
-                    {column}
+                <AutoLayout name="content-area" width={"fill-parent"} spacing={20} direction="vertical">
+                    <AutoLayout
+                        name="text-box"
+                        width={"fill-parent"}
+                        height={"hug-contents"}
+                        fill={"#fff8f8"}
+                        padding={{
+                            vertical: 4,
+                            horizontal: 10,
+                        }}
+                    >
+                        <Text fill={"#e84e4e"} width={"fill-parent"} fontSize={14} fontWeight={700} fontFamily={"Noto Sans"}>
+                            * Clicking on a pointer moves to that pointer's location.
+                        </Text>
+                    </AutoLayout>
+
+                    <AutoLayout name="list-area" width={"fill-parent"} spacing={20}>
+                        {column}
+                    </AutoLayout>
                 </AutoLayout>
             );
         }
@@ -192,7 +241,18 @@ function plannerWidget() {
                 padding={10}
             >
                 <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"}>
-                    <AutoLayout name="pointer" width={28} height={28} fill={textColor} cornerRadius={30} horizontalAlignItems={"center"} verticalAlignItems={"center"}>
+                    <AutoLayout
+                        name="pointer"
+                        width={28}
+                        height={28}
+                        fill={textColor}
+                        cornerRadius={30}
+                        horizontalAlignItems={"center"}
+                        verticalAlignItems={"center"}
+                        onClick={(e) => {
+                            goToNumber(data.id, data.type);
+                        }}
+                    >
                         <Text name="number" fill={"#fff"} fontSize={16} fontWeight={700}>
                             {data.id}
                         </Text>

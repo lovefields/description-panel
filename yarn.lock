@@ -12,9 +12,9 @@
   "resolved" "https://registry.npmjs.org/@figma/widget-typings/-/widget-typings-1.5.0.tgz"
   "version" "1.5.0"
 
-"esbuild-darwin-64@0.15.13":
-  "integrity" "sha512-WAx7c2DaOS6CrRcoYCgXgkXDliLnFv3pQLV6GeW1YcGEZq2Gnl8s9Pg7ahValZkpOa0iE/ojRVQ87sbUhF1Cbg=="
-  "resolved" "https://registry.npmjs.org/esbuild-darwin-64/-/esbuild-darwin-64-0.15.13.tgz"
+"esbuild-windows-64@0.15.13":
+  "integrity" "sha512-Et6htEfGycjDrtqb2ng6nT+baesZPYQIW+HUEHK4D1ncggNrDNk3yoboYQ5KtiVrw/JaDMNttz8rrPubV/fvPQ=="
+  "resolved" "https://registry.npmjs.org/esbuild-windows-64/-/esbuild-windows-64-0.15.13.tgz"
   "version" "0.15.13"
 
 "esbuild@*":
