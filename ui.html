@@ -119,6 +119,7 @@
             $btnSave.forEach(($el) => {
                 $el.addEventListener("click", function () {
                     if (pageData.mode == "new") {
+                        let $descriptionBox = document.querySelector(".new-box .description-write-area");
                         let $textarea = document.querySelector(".new-box .textarea");
                         let content = $textarea.value.trim();
                         let data = JSON.stringify({
@@ -130,11 +131,12 @@
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "add", data: data } }, "*");
                         } else {
-                            $textarea.classList.add("--error");
+                            $descriptionBox.classList.add("--error");
                         }
                     }
 
                     if (pageData.mode == "edit") {
+                        let $descriptionBox = document.querySelector(".new-box .description-write-area");
                         let $textarea = document.querySelector(".edit-box .textarea");
                         let content = $textarea.value.trim();
                         let data = JSON.stringify({
@@ -146,7 +148,7 @@
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "edit", data: data } }, "*");
                         } else {
-                            $textarea.classList.add("--error");
+                            $descriptionBox.classList.add("--error");
                         }
                     }
                 });
@@ -306,8 +308,13 @@
         resize: none;
     }
 
-    .description-write-area .textarea.--error {
-        border-color: red;
+    .description-write-area.--error .caption {
+        color: #e84e4e;
+    }
+
+    .description-write-area.--error .textarea {
+        background: #fff4f4;
+        border-color: #e84e4e;
     }
 
     .btn-area {
