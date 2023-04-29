@@ -129,7 +129,7 @@ function plannerWidget() {
         count = 1;
     }
 
-    let widgetWidth = 450 * count;
+    let widgetWidth = 500 * count;
 
     function listStructure() {
         let noData = true;
@@ -240,7 +240,7 @@ function plannerWidget() {
                 cornerRadius={10}
                 padding={10}
             >
-                <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"}>
+                <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"} opacity={data.complete ? 0.3 : 1}>
                     <AutoLayout
                         name="pointer"
                         width={28}
@@ -283,12 +283,36 @@ function plannerWidget() {
                         horizontal: 8,
                     }}
                     cornerRadius={5}
+                    opacity={data.complete ? 0.3 : 1}
                 >
                     <Text name="description" width={"fill-parent"} fill={"#616161"} fontSize={16} lineHeight={"150%"}>
                         {data.content}
                     </Text>
                 </AutoLayout>
 
+                {data.complete ? 
+                <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
+                    <AutoLayout
+                        width={"fill-parent"}
+                        height={35}
+                        fill={"#6436EA"}
+                        cornerRadius={5}
+                        horizontalAlignItems={"center"}
+                        verticalAlignItems={"center"}
+                        opacity={0.3}
+                        hoverStyle={{
+                            opacity: 1
+                        }}
+                        onClick={(e) => {
+                            widgetDataJson[data.type][data.id - 1].complete = false;
+                            setData();
+                        }}
+                    >
+                        <Text fill={"#fff"} fontSize={14}>
+                            uncomplete
+                        </Text>
+                    </AutoLayout>
+                </AutoLayout> : 
                 <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
                     <AutoLayout
                         width={"fill-parent"}
@@ -359,7 +383,25 @@ function plannerWidget() {
                             Make Pointer
                         </Text>
                     </AutoLayout>
-                </AutoLayout>
+
+                    <AutoLayout
+                        width={"fill-parent"}
+                        height={35}
+                        fill="#6436EA"
+                        cornerRadius={5}
+                        horizontalAlignItems={"center"}
+                        verticalAlignItems={"center"}
+                        onClick={(e) => {
+                            widgetDataJson[data.type][data.id - 1].complete = true;
+                            setData();
+                        }}
+                    >
+                        <Text fill={"#fff"} fontSize={14}>
+                            complete
+                        </Text>
+                    </AutoLayout>
+                </AutoLayout>}
+                
             </AutoLayout>
         );
     }
@@ -444,6 +486,11 @@ function plannerWidget() {
                 },
                 {
                     itemType: "action",
+                    propertyName: "complete",
+                    tooltip: "Complete All",
+                },
+                {
+                    itemType: "action",
                     propertyName: "new",
                     tooltip: "New Widget",
                 },
@@ -490,6 +537,15 @@ function plannerWidget() {
                     });
 
                     cloneWidget.x += widgetWidth + 50;
+                }
+
+                if (propertyName == "complete") {
+                    for(let [key,value] of Object.entries(widgetDataJson)){
+                        widgetDataJson[key].forEach((row)=>{
+                            row.complete = true;
+                        });
+                    }
+                    setData();
                 }
             }
         );
