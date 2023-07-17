@@ -1,69 +1,54 @@
+import type { DescriptionItem, WidgetData, DisplayItemData } from "./type";
+import { saveAndArrangementData } from "./util";
+
 const { widget } = figma;
 const { useWidgetId, useSyncedState, usePropertyMenu, AutoLayout, Text, Input, useEffect } = widget;
 
-type descriptionType = "visible" | "invisible" | "tracking" | "design";
-
-interface descriptionItem {
-    id: number;
-    type: descriptionType;
-    content: string;
-}
-
 function plannerWidget() {
-    const [widgetType] = useSyncedState("widgetType", "parent");
-    const [parentId] = useSyncedState("parentId", "");
-    const [dataId] = useSyncedState("dataId", "");
-    const [dataType] = useSyncedState("dataType", "");
-    const [dataContent] = useSyncedState("dataContent", "");
-    const [widgetData, setWidgetData] = useSyncedState(
-        "widgetData",
-        JSON.stringify({
-            visible: [],
-            invisible: [],
-            tracking: [],
-            design: [],
-        })
-    );
-    const [pageTitle, setPageTitle] = useSyncedState("pageTitle", "");
-    const [pageCaption, setPageCaption] = useSyncedState("pageCaption", "");
-    let widgetDataJson = JSON.parse(widgetData);
-    let widgetId = useWidgetId();
+    const [widgetType] = useSyncedState<string>("widgetType", "parent");
+    const [parentWidgetId] = useSyncedState<string>("parentWidgetId", "");
+    const [code] = useSyncedState<string>("code", "");
+    const [displayData] = useSyncedState<DisplayItemData>("displayData", {
+        displayNumber: "",
+        type: "",
+        content: "",
+    });
+    const [widgetData, setWidgetData] = useSyncedState<WidgetData>("widgetData", {
+        visible: [],
+        invisible: [],
+        tracking: [],
+        design: [],
+    });
+    const [pageTitle, setPageTitle] = useSyncedState<string>("pageTitle", "");
+    const [pageCaption, setPageCaption] = useSyncedState<string>("pageCaption", "");
+    const widgetId: string = useWidgetId();
 
-    // data arrangement
-    function arrangementData(data: { [key: string]: descriptionItem[] }) {
-        let keyList = Object.keys(data);
+    let count = 0;
+    const keyList = Object.keys(widgetData);
 
-        keyList.map((key) => {
-            data[key].map((value: descriptionItem, i: number) => {
-                data[key][i].id = i + 1;
-            });
-        });
+    keyList.map((key) => {
+        if (widgetData[key].length > 0) {
+            count += 1;
+        }
+    });
 
-        return data;
+    if (count == 0) {
+        count = 1;
     }
 
-    // going to number
+    const widgetWidth = 500 * count;
+
+    // 번호 포인터로 가기
     function goToNumber(id: number, type: string) {
-        const allNode: any[] = figma.currentPage.findAll();
-        const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
-            return node.type === "WIDGET";
-        });
+        const allNode: BaseNode[] = figma.currentPage.findAll();
+        const targetNode: BaseNode[] = allNode.filter((node: BaseNode) => {
+            if (node.type === "WIDGET" && node.widgetSyncedState.parentWidgetId === widgetId) {
+                const childType = node.widgetSyncedState.dataType;
+                const childId = node.widgetSyncedState.dataId;
 
-        const myWidgetNodes: WidgetNode[] = allWidgetNodes.filter((node) => {
-            return node.widgetId === figma.widgetId;
-        });
-
-        const childWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
-            return node.widgetSyncedState.parentId === widgetId;
-        });
-
-        let targetNode: WidgetNode[] = [];
-        childWidgetNode.forEach((child) => {
-            let childType = child.widgetSyncedState.dataType;
-            let childId = child.widgetSyncedState.dataId;
-
-            if (childId == id && childType == type) {
-                targetNode.push(child);
+                if (childId == id && childType == type) {
+                    return node;
+                }
             }
         });
 
@@ -74,70 +59,49 @@ function plannerWidget() {
         }
     }
 
+    // 정보 삭제
     function deleteData(id: number, type: string) {
-        const allNode: any[] = figma.currentPage.findAll();
-        const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
-            return node.type === "WIDGET";
+        const allNode: BaseNode[] = figma.currentPage.findAll();
+        const targetNode: any[] = allNode.filter((node: BaseNode) => {
+            if (node.type === "WIDGET" && node.widgetSyncedState.parentWidgetId === widgetId) {
+                const childType = node.widgetSyncedState.dataType;
+
+                if (childType == type) {
+                    return node;
+                }
+            }
         });
 
-        const myWidgetNodes: WidgetNode[] = allWidgetNodes.filter((node) => {
-            return node.widgetId === figma.widgetId;
-        });
+        widgetData[type].splice(id - 1, 1);
+        saveAndArrangementData(widgetData, setWidgetData);
 
-        const childWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
-            return node.widgetSyncedState.parentId === widgetId;
-        });
+        targetNode.forEach((child) => {
+            const childType = child.widgetSyncedState.dataType;
+            const childId = child.widgetSyncedState.dataId;
 
-        widgetDataJson[type].splice(id - 1, 1);
-        setData();
-
-        childWidgetNode.forEach((child) => {
-            let childType = child.widgetSyncedState.dataType;
-            let childId = child.widgetSyncedState.dataId;
-
-            if (childId == id && childType == type) {
+            if (childId == id) {
                 child.remove();
             }
 
-            if (childId > id && childType == type) {
+            if (childId > id) {
                 child.setWidgetSyncedState({
                     widgetType: "child",
-                    parentId: widgetId,
+                    parentWidgetId: widgetId,
                     dataId: childId - 1,
                     dataType: childType,
-                    dataContent: widgetDataJson[childType][childId - 2].content,
+                    dataContent: widgetData[childType][childId - 2].content,
                 });
             }
         });
     }
 
-    function setData() {
-        widgetDataJson = arrangementData(widgetDataJson);
-        setWidgetData(JSON.stringify(widgetDataJson));
-    }
-
-    let count = 0;
-    let keyList = Object.keys(widgetDataJson);
-
-    keyList.map((key) => {
-        if (widgetDataJson[key].length > 0) {
-            count += 1;
-        }
-    });
-
-    if (count == 0) {
-        count = 1;
-    }
-
-    let widgetWidth = 500 * count;
-
     function listStructure() {
         let noData = true;
-        let keyList = Object.keys(widgetDataJson);
+        let keyList = Object.keys(widgetData);
         let column = keyList.map((key) => {
-            if (widgetDataJson[key].length > 0) {
+            if (widgetData[key].length > 0) {
                 noData = false;
-                let item = widgetDataJson[key].map((row: descriptionItem) => {
+                let item = widgetData[key].map((row: DescriptionItem) => {
                     return itemStructure(row);
                 });
 
@@ -155,14 +119,12 @@ function plannerWidget() {
                     onClick={(e) => {
                         return new Promise((resolve) => {
                             figma.showUI(__html__, { width: 420, height: 500 });
-                            figma.ui.postMessage(
-                                JSON.stringify({
-                                    mode: "new",
-                                    id: null,
-                                    type: "",
-                                    content: "",
-                                })
-                            );
+                            figma.ui.postMessage({
+                                mode: "new",
+                                id: -1,
+                                type: "",
+                                content: "",
+                            });
                         });
                     }}
                     fill={"#6436EA"}
@@ -203,7 +165,7 @@ function plannerWidget() {
         }
     }
 
-    function itemStructure(data: descriptionItem) {
+    function itemStructure(data: DescriptionItem) {
         let bgColor = "";
         let textColor = "";
 
@@ -227,19 +189,7 @@ function plannerWidget() {
         }
 
         return (
-            <AutoLayout
-                name="item"
-                width={"fill-parent"}
-                direction="vertical"
-                key={data.id}
-                fill={"#fff"}
-                stroke={"#E0E0E0"}
-                strokeAlign={"inside"}
-                strokeWidth={1}
-                spacing={20}
-                cornerRadius={10}
-                padding={10}
-            >
+            <AutoLayout name="item" width={"fill-parent"} direction="vertical" key={data.id} fill={"#fff"} stroke={"#E0E0E0"} strokeAlign={"inside"} strokeWidth={1} spacing={20} cornerRadius={10} padding={10}>
                 <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"} opacity={data.complete ? 0.3 : 1}>
                     <AutoLayout
                         name="pointer"
@@ -290,84 +240,83 @@ function plannerWidget() {
                     </Text>
                 </AutoLayout>
 
-                {data.complete ? 
-                <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
-                    <AutoLayout
-                        width={"fill-parent"}
-                        height={35}
-                        fill={"#6436EA"}
-                        cornerRadius={5}
-                        horizontalAlignItems={"center"}
-                        verticalAlignItems={"center"}
-                        opacity={0.3}
-                        hoverStyle={{
-                            opacity: 1
-                        }}
-                        onClick={(e) => {
-                            widgetDataJson[data.type][data.id - 1].complete = false;
-                            setData();
-                        }}
-                    >
-                        <Text fill={"#fff"} fontSize={14}>
-                            uncomplete
-                        </Text>
+                {data.complete ? (
+                    <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
+                        <AutoLayout
+                            width={"fill-parent"}
+                            height={35}
+                            fill={"#6436EA"}
+                            cornerRadius={5}
+                            horizontalAlignItems={"center"}
+                            verticalAlignItems={"center"}
+                            opacity={0.3}
+                            hoverStyle={{
+                                opacity: 1,
+                            }}
+                            onClick={(e) => {
+                                widgetData[data.type][data.id - 1].complete = false;
+                                saveAndArrangementData(widgetData, setWidgetData);
+                            }}
+                        >
+                            <Text fill={"#fff"} fontSize={14}>
+                                uncomplete
+                            </Text>
+                        </AutoLayout>
                     </AutoLayout>
-                </AutoLayout> : 
-                <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
-                    <AutoLayout
-                        width={"fill-parent"}
-                        height={35}
-                        fill={"#F0EBFD"}
-                        cornerRadius={5}
-                        horizontalAlignItems={"center"}
-                        verticalAlignItems={"center"}
-                        onClick={(e) => {
-                            deleteData(data.id, data.type);
-                        }}
-                    >
-                        <Text fill={"#B29BF5"} fontSize={14}>
-                            Delete
-                        </Text>
-                    </AutoLayout>
+                ) : (
+                    <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
+                        <AutoLayout
+                            width={"fill-parent"}
+                            height={35}
+                            fill={"#F0EBFD"}
+                            cornerRadius={5}
+                            horizontalAlignItems={"center"}
+                            verticalAlignItems={"center"}
+                            onClick={(e) => {
+                                deleteData(data.id, data.type);
+                            }}
+                        >
+                            <Text fill={"#B29BF5"} fontSize={14}>
+                                Delete
+                            </Text>
+                        </AutoLayout>
 
-                    <AutoLayout
-                        width={"fill-parent"}
-                        height={35}
-                        fill={"#6436EA"}
-                        cornerRadius={5}
-                        horizontalAlignItems={"center"}
-                        verticalAlignItems={"center"}
-                        onClick={(e) => {
-                            return new Promise((resolve) => {
-                                figma.showUI(__html__, { width: 420, height: 350 });
-                                figma.ui.postMessage(
-                                    JSON.stringify(
+                        <AutoLayout
+                            width={"fill-parent"}
+                            height={35}
+                            fill={"#6436EA"}
+                            cornerRadius={5}
+                            horizontalAlignItems={"center"}
+                            verticalAlignItems={"center"}
+                            onClick={(e) => {
+                                return new Promise((resolve) => {
+                                    figma.showUI(__html__, { width: 420, height: 350 });
+                                    figma.ui.postMessage(
                                         Object.assign(
                                             {
                                                 mode: "edit",
                                             },
-                                            widgetDataJson[data.type][data.id - 1]
+                                            widgetData[data.type][data.id - 1]
                                         )
-                                    )
-                                );
-                            });
-                        }}
-                    >
-                        <Text fill={"#fff"} fontSize={14}>
-                            Edit
-                        </Text>
-                    </AutoLayout>
+                                    );
+                                });
+                            }}
+                        >
+                            <Text fill={"#fff"} fontSize={14}>
+                                Edit
+                            </Text>
+                        </AutoLayout>
 
-                    <AutoLayout
-                        width={"fill-parent"}
-                        height={35}
-                        fill="#6436EA"
-                        cornerRadius={5}
-                        horizontalAlignItems={"center"}
-                        verticalAlignItems={"center"}
-                        onClick={(e) => {
-                            return new Promise((resolve) => {
-                                figma.showUI(`
+                        <AutoLayout
+                            width={"fill-parent"}
+                            height={35}
+                            fill="#6436EA"
+                            cornerRadius={5}
+                            horizontalAlignItems={"center"}
+                            verticalAlignItems={"center"}
+                            onClick={(e) => {
+                                return new Promise((resolve) => {
+                                    figma.showUI(`
                                     <script>
                                         window.onmessage = (event) => {
                                             let data = event.data.pluginMessage;
@@ -375,33 +324,33 @@ function plannerWidget() {
                                         };
                                     </script>
                                 `);
-                                figma.ui.postMessage(JSON.stringify(widgetDataJson[data.type][data.id - 1]));
-                            });
-                        }}
-                    >
-                        <Text fill={"#fff"} fontSize={14}>
-                            Make Pointer
-                        </Text>
-                    </AutoLayout>
+                                    figma.ui.postMessage(widgetData[data.type][data.id - 1]);
+                                });
+                            }}
+                        >
+                            <Text fill={"#fff"} fontSize={14}>
+                                Make Pointer
+                            </Text>
+                        </AutoLayout>
 
-                    <AutoLayout
-                        width={"fill-parent"}
-                        height={35}
-                        fill="#6436EA"
-                        cornerRadius={5}
-                        horizontalAlignItems={"center"}
-                        verticalAlignItems={"center"}
-                        onClick={(e) => {
-                            widgetDataJson[data.type][data.id - 1].complete = true;
-                            setData();
-                        }}
-                    >
-                        <Text fill={"#fff"} fontSize={14}>
-                            complete
-                        </Text>
+                        <AutoLayout
+                            width={"fill-parent"}
+                            height={35}
+                            fill="#6436EA"
+                            cornerRadius={5}
+                            horizontalAlignItems={"center"}
+                            verticalAlignItems={"center"}
+                            onClick={(e) => {
+                                widgetData[data.type][data.id - 1].complete = true;
+                                saveAndArrangementData(widgetData, setWidgetData);
+                            }}
+                        >
+                            <Text fill={"#fff"} fontSize={14}>
+                                complete
+                            </Text>
+                        </AutoLayout>
                     </AutoLayout>
-                </AutoLayout>}
-                
+                )}
             </AutoLayout>
         );
     }
@@ -409,15 +358,15 @@ function plannerWidget() {
     useEffect(() => {
         figma.ui.onmessage = (msg) => {
             if (msg.type === "add") {
-                let data = JSON.parse(msg.data);
-                widgetDataJson[data.type].push(data);
-                setData();
+                let data = msg.data;
+                widgetData[data.type].push(data);
+                saveAndArrangementData(widgetData, setWidgetData);
             }
 
             if (msg.type === "edit") {
-                let data = JSON.parse(msg.data);
-                widgetDataJson[data.type][data.id - 1] = data;
-                setData();
+                let data = msg.data;
+                widgetData[data.type][data.id - 1] = data;
+                saveAndArrangementData(widgetData, setWidgetData);
 
                 const allNode: any[] = figma.currentPage.findAll();
                 const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
@@ -429,7 +378,7 @@ function plannerWidget() {
                 });
 
                 const childWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
-                    return node.widgetSyncedState.parentId === widgetId;
+                    return node.widgetSyncedState.parentWidgetId === widgetId;
                 });
 
                 childWidgetNode.forEach((child) => {
@@ -438,16 +387,16 @@ function plannerWidget() {
 
                     child.setWidgetSyncedState({
                         widgetType: "child",
-                        parentId: widgetId,
+                        parentWidgetId: widgetId,
                         dataId: childId,
                         dataType: childType,
-                        dataContent: widgetDataJson[childType][childId - 1].content,
+                        dataContent: widgetData[childType][childId - 1].content,
                     });
                 });
             }
 
             if (msg.type === "pointer") {
-                let data = JSON.parse(msg.data);
+                let data = msg.data;
                 const allNode: any[] = figma.currentPage.findAll();
                 const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
                     return node.type === "WIDGET";
@@ -463,7 +412,7 @@ function plannerWidget() {
 
                 let childNode = thisWidgetNode.cloneWidget({
                     widgetType: "child",
-                    parentId: widgetId,
+                    parentWidgetId: widgetId,
                     dataType: data.type,
                     dataId: data.id,
                     dataContent: data.content,
@@ -499,14 +448,12 @@ function plannerWidget() {
                 if (propertyName == "add") {
                     return new Promise((resolve) => {
                         figma.showUI(__html__, { width: 420, height: 500 });
-                        figma.ui.postMessage(
-                            JSON.stringify({
-                                mode: "new",
-                                id: null,
-                                type: "",
-                                content: "",
-                            })
-                        );
+                        figma.ui.postMessage({
+                            mode: "new",
+                            id: -1,
+                            type: "",
+                            content: "",
+                        });
                     });
                 }
 
@@ -528,24 +475,24 @@ function plannerWidget() {
                         widgetType: "parent",
                         pageTitle: "",
                         pageCaption: "",
-                        widgetData: JSON.stringify({
+                        widgetData: {
                             visible: [],
                             invisible: [],
                             tracking: [],
                             design: [],
-                        }),
+                        },
                     });
 
                     cloneWidget.x += widgetWidth + 50;
                 }
 
                 if (propertyName == "complete") {
-                    for(let [key,value] of Object.entries(widgetDataJson)){
-                        widgetDataJson[key].forEach((row)=>{
+                    for (let [key, value] of Object.entries(widgetData)) {
+                        widgetData[key].forEach((row) => {
                             row.complete = true;
                         });
                     }
-                    setData();
+                    saveAndArrangementData(widgetData, setWidgetData);
                 }
             }
         );
@@ -641,14 +588,12 @@ function plannerWidget() {
                 onClick={(e) => {
                     return new Promise((resolve) => {
                         figma.showUI(__html__, { width: 420, height: 400 });
-                        figma.ui.postMessage(
-                            JSON.stringify({
-                                mode: "view",
-                                id: dataId,
-                                type: dataType,
-                                content: dataContent,
-                            })
-                        );
+                        figma.ui.postMessage({
+                            mode: "view",
+                            id: dataId,
+                            type: dataType,
+                            content: dataContent,
+                        });
                     });
                 }}
             >

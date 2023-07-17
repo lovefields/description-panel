@@ -111,8 +111,7 @@
 
     window.onmessage = (event) => {
         if (event.data.pluginMessage !== "") {
-            let pageData = JSON.parse(event.data.pluginMessage);
-
+            let pageData = event.data.pluginMessage;
             setPage(pageData);
 
             // add new data
@@ -122,12 +121,12 @@
                         let $descriptionBox = document.querySelector(".new-box .description-write-area");
                         let $textarea = document.querySelector(".new-box .textarea");
                         let content = $textarea.value.trim();
-                        let data = JSON.stringify({
+                        let data = {
                             id: null,
                             type: document.querySelector(".new-box .input-type:checked").value,
                             content: content,
                             complete: false,
-                        });
+                        };
 
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "add", data: data } }, "*");
@@ -140,11 +139,11 @@
                         let $descriptionBox = document.querySelector(".new-box .description-write-area");
                         let $textarea = document.querySelector(".edit-box .textarea");
                         let content = $textarea.value.trim();
-                        let data = JSON.stringify({
+                        let data = {
                             id: pageData.id,
                             type: pageData.type,
                             content: content,
-                        });
+                        };
 
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "edit", data: data } }, "*");
