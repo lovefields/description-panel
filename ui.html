@@ -69,6 +69,7 @@
     const $errorPage = document.querySelector(".error-box");
     const $btnCancel = document.querySelectorAll(".btn-cancel");
     const $btnSave = document.querySelectorAll(".btn-save");
+    let mycode = "";
 
     Object.defineProperty(String.prototype, "capitalize", {
         value: function () {
@@ -88,6 +89,7 @@
         switch (data.mode) {
             case "new":
                 $newPage.classList.add("--active");
+                mycode = data.code;
                 break;
             case "edit":
                 $editPage.classList.add("--active");
@@ -109,12 +111,13 @@
         }
     }
 
+    // 위젯 데이터 수취
     window.onmessage = (event) => {
         if (event.data.pluginMessage !== "") {
-            let pageData = event.data.pluginMessage;
+            const pageData = event.data.pluginMessage;
             setPage(pageData);
 
-            // add new data
+            // 저장 클릭
             $btnSave.forEach(($el) => {
                 $el.addEventListener("click", function () {
                     if (pageData.mode == "new") {
@@ -124,8 +127,11 @@
                         let data = {
                             id: null,
                             type: document.querySelector(".new-box .input-type:checked").value,
+                            code: mycode,
                             content: content,
                             complete: false,
+                            openMenu: false,
+                            child: [],
                         };
 
                         if (content !== "") {
