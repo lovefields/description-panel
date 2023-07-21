@@ -1,5 +1,5 @@
-import type { DescriptionItem, WidgetData, DisplayItemData } from "./type";
-import { goToNumber, saveAndArrangementData, setPanelCode } from "./util";
+import type { DescriptionItem, WidgetData, DisplayItemData, ChildItem } from "./type";
+import { goToNumber, saveAndArrangementData, setPanelCode, closeAllMenu } from "./util";
 
 const { widget } = figma;
 const { useWidgetId, useSyncedState, usePropertyMenu, AutoLayout, Text, Input, useEffect, Rectangle } = widget;
@@ -48,34 +48,59 @@ function plannerWidget() {
                 saveAndArrangementData(widgetData, setWidgetData);
             }
 
+            if (msg.type === "addChild") {
+                widgetData[data.type][data.parentId - 1].child.push(data);
+                saveAndArrangementData(widgetData, setWidgetData);
+            }
+
             if (msg.type === "edit") {
+                // 부모 수정
                 widgetData[data.type][data.id - 1].content = data.content;
                 saveAndArrangementData(widgetData, setWidgetData);
 
-                // TODO : 포인터 업데이트
                 const allNode: any[] = figma.currentPage.findAll();
-                const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
-                    return node.type === "WIDGET";
+                const targetNodes: any[] = allNode.filter((node) => {
+                    if (node.type === "WIDGET" && node.widgetSyncedState.panelCode === data.code) {
+                        return node;
+                    }
                 });
 
-                const myWidgetNodes: WidgetNode[] = allWidgetNodes.filter((node) => {
-                    return node.widgetId === figma.widgetId;
-                });
-
-                const childWidgetNode: WidgetNode[] = myWidgetNodes.filter((node) => {
-                    return node.widgetSyncedState.parentWidgetId === widgetId;
-                });
-
-                childWidgetNode.forEach((child) => {
-                    let childId = child.widgetSyncedState.dataId;
-                    let childType = child.widgetSyncedState.dataType;
-
-                    child.setWidgetSyncedState({
+                targetNodes.forEach((node) => {
+                    node.setWidgetSyncedState({
                         widgetType: "child",
                         parentWidgetId: widgetId,
-                        dataId: childId,
-                        dataType: childType,
-                        dataContent: widgetData[childType][childId - 1].content,
+                        panelCode: data.code,
+                        displayData: {
+                            displayNumber: String(data.id),
+                            type: data.type,
+                            content: data.content,
+                        },
+                    });
+                });
+            }
+
+            if (msg.type === "editChild") {
+                // 자식 수정
+                widgetData[data.type][data.parentId - 1].child[data.id - 1].content = data.content;
+                saveAndArrangementData(widgetData, setWidgetData);
+
+                const allNode: any[] = figma.currentPage.findAll();
+                const targetNodes: any[] = allNode.filter((node) => {
+                    if (node.type === "WIDGET" && node.widgetSyncedState.panelCode === data.code) {
+                        return node;
+                    }
+                });
+
+                targetNodes.forEach((node) => {
+                    node.setWidgetSyncedState({
+                        widgetType: "child",
+                        parentWidgetId: widgetId,
+                        panelCode: data.code,
+                        displayData: {
+                            displayNumber: `${data.parentId}-${data.id}`,
+                            type: data.type,
+                            content: data.content,
+                        },
                     });
                 });
             }
@@ -89,7 +114,7 @@ function plannerWidget() {
                     parentWidgetId: widgetId,
                     panelCode: data.code,
                     displayData: {
-                        displayNumber: data.id,
+                        displayNumber: data.child ? data.id : `${data.parentId}-${data.id}`,
                         type: data.type,
                         content: data.content,
                     },
@@ -138,20 +163,9 @@ function plannerWidget() {
                 }
 
                 if (propertyName == "new") {
-                    const allNode: any[] = figma.currentPage.findAll();
-                    const allWidgetNodes: WidgetNode[] = allNode.filter((node) => {
-                        return node.type === "WIDGET";
-                    });
-
-                    const myWidgetNodes: WidgetNode[] = allWidgetNodes.filter((node) => {
-                        return node.widgetId === figma.widgetId;
-                    });
-
-                    const thisWidgetNode: WidgetNode = myWidgetNodes.filter((node) => {
-                        return node.id === widgetId;
-                    })[0];
-
-                    let cloneWidget = thisWidgetNode.cloneWidget({
+                    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+                    const parentNode = widgetNode?.parent as BaseNode;
+                    const childNode = widgetNode.cloneWidget({
                         widgetType: "parent",
                         pageTitle: "",
                         pageCaption: "",
@@ -163,13 +177,21 @@ function plannerWidget() {
                         },
                     });
 
-                    cloneWidget.x += widgetWidth + 50;
+                    childNode.x += widgetWidth + 50;
+
+                    if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
+                        parentNode.appendChild(childNode);
+                    }
                 }
 
                 if (propertyName == "complete") {
                     for (let [key, value] of Object.entries(widgetData)) {
                         widgetData[key].forEach((row) => {
                             row.complete = true;
+
+                            row.child.forEach((child) => {
+                                child.complete = true;
+                            });
                         });
                     }
                     saveAndArrangementData(widgetData, setWidgetData);
@@ -179,39 +201,51 @@ function plannerWidget() {
     }
 
     // 정보 삭제
-    function deleteData(id: number, type: string) {
+    function deleteData(data: DescriptionItem | ChildItem) {
         const allNode: BaseNode[] = figma.currentPage.findAll();
         const targetNode: any[] = allNode.filter((node: BaseNode) => {
             if (node.type === "WIDGET" && node.widgetSyncedState.parentWidgetId === widgetId) {
-                const childType = node.widgetSyncedState.dataType;
+                const displayData = node.widgetSyncedState.displayData;
 
-                if (childType == type) {
+                if (displayData.type == data.type) {
                     return node;
                 }
             }
         });
+        // @ts-ignore : 타입 중복
+        const isParent: boolean = data?.child ? true : false;
 
-        widgetData[type].splice(id - 1, 1);
+        if (isParent === true) {
+            // 부모인 경우
+            widgetData[data.type].splice(data.id - 1, 1);
+        } else {
+            // @ts-ignore : 타입 중복 // 자식인 경우
+            widgetData[data.type][data.parentId - 1].child.splice(data.id - 1, 1);
+        }
+
         saveAndArrangementData(widgetData, setWidgetData);
 
-        targetNode.forEach((child) => {
-            const childType = child.widgetSyncedState.dataType;
-            const childId = child.widgetSyncedState.dataId;
+        targetNode.forEach((node) => {
+            const panelCode = node.widgetSyncedState.panelCode;
+            // const displayData = node.widgetSyncedState.displayData;
 
-            if (childId == id) {
-                child.remove();
+            if (panelCode === data.code) {
+                // 일치항목 삭제
+                node.remove();
             }
 
-            if (childId > id) {
-                child.setWidgetSyncedState({
-                    widgetType: "child",
-                    parentWidgetId: widgetId,
-                    dataId: childId - 1,
-                    dataType: childType,
-                    dataContent: widgetData[childType][childId - 2].content,
+            if (isParent === true) {
+                // @ts-ignore : 중복 타입 // 부모인경우
+                data.child.forEach((c) => {
+                    if (panelCode === c.code) {
+                        // 일치항목 삭제
+                        node.remove();
+                    }
                 });
             }
         });
+
+        // 넘버링 재정렬
     }
 
     function listStructure() {
@@ -221,7 +255,29 @@ function plannerWidget() {
             if (widgetData[key].length > 0) {
                 noData = false;
                 let item = widgetData[key].map((row: DescriptionItem) => {
-                    return itemStructure(row);
+                    const childList = row.child.map((child) => {
+                        return itemStructure(child);
+                    });
+
+                    return (
+                        <AutoLayout name="row" width={"fill-parent"} direction="vertical" spacing={10} key={row.code} overflow="visible">
+                            {itemStructure(row)}
+                            {row.child.length > 0 ? (
+                                <AutoLayout
+                                    name="chld-row"
+                                    width={"fill-parent"}
+                                    direction="vertical"
+                                    spacing={10}
+                                    padding={{
+                                        left: 20,
+                                    }}
+                                    overflow="visible"
+                                >
+                                    {childList}
+                                </AutoLayout>
+                            ) : null}
+                        </AutoLayout>
+                    );
                 });
 
                 return (
@@ -261,7 +317,7 @@ function plannerWidget() {
                 <AutoLayout name="content-area" width={"fill-parent"} spacing={20} direction="vertical" overflow="visible">
                     <AutoLayout
                         name="text-box"
-                        width={"fill-parent"}
+                        width={"hug-contents"}
                         height={"hug-contents"}
                         fill={"#fff8f8"}
                         padding={{
@@ -269,7 +325,7 @@ function plannerWidget() {
                             horizontal: 10,
                         }}
                     >
-                        <Text fill={"#e84e4e"} width={"hug-contents"} fontSize={14} fontWeight={700} fontFamily={"Noto Sans"}>
+                        <Text fill={"#e84e4e"} width={"fill-parent"} fontSize={14} fontWeight={700} fontFamily={"Noto Sans"}>
                             * Clicking on a pointer moves to that pointer's location.
                         </Text>
                     </AutoLayout>
@@ -282,7 +338,7 @@ function plannerWidget() {
         }
     }
 
-    function itemStructure(data: DescriptionItem) {
+    function itemStructure(data: DescriptionItem | ChildItem) {
         const panelChildList = [];
         let bgColor = "";
         let textColor = "";
@@ -317,11 +373,14 @@ function plannerWidget() {
                     horizontalAlignItems={"center"}
                     verticalAlignItems={"center"}
                     onClick={(e) => {
-                        goToNumber(data.id, data.type, widgetId, figma);
+                        goToNumber(data.code, widgetId, figma);
                     }}
                 >
                     <Text name="number" fill={"#fff"} fontSize={16} fontWeight={700}>
-                        {data.id}
+                        {
+                            // @ts-ignore : 중복 타입
+                            data.child ? data.id : `${data.parentId}-${data.id}`
+                        }
                     </Text>
                 </AutoLayout>
 
@@ -350,7 +409,10 @@ function plannerWidget() {
                         verticalAlignItems={"center"}
                         spacing={2}
                         onClick={(e) => {
-                            widgetData[data.type][data.id - 1].openMenu = !data.openMenu;
+                            if (data.openMenu === false) {
+                                closeAllMenu(widgetData, setWidgetData);
+                            }
+                            data.openMenu = !data.openMenu;
                             saveAndArrangementData(widgetData, setWidgetData);
                         }}
                         overflow="visible"
@@ -403,10 +465,10 @@ function plannerWidget() {
                         return new Promise((resolve) => {
                             figma.showUI(__html__, { width: 420, height: 350 });
                             figma.ui.postMessage({
-                                mode: "edit",
+                                // @ts-ignore : 중복 타입
+                                mode: data.child ? "edit" : "editChild",
                                 ...data,
                             });
-                            data.openMenu = false;
                         });
                     }}
                     key={0}
@@ -490,6 +552,15 @@ function plannerWidget() {
                         }}
                         onClick={(e) => {
                             data.openMenu = false;
+                            saveAndArrangementData(widgetData, setWidgetData);
+                            return new Promise((resolve) => {
+                                figma.showUI(__html__, { width: 420, height: 350 });
+                                figma.ui.postMessage({
+                                    ...data,
+                                    mode: "addChild",
+                                    code: setPanelCode(),
+                                });
+                            });
                         }}
                         key={"menu-2"}
                     >
@@ -559,7 +630,10 @@ function plannerWidget() {
                     hoverStyle={{
                         fill: "#6436EA",
                     }}
-                    onClick={(e) => {}}
+                    onClick={(e) => {
+                        data.openMenu = false;
+                        deleteData(data);
+                    }}
                     key={"menu-4"}
                 >
                     <Text
@@ -579,13 +653,17 @@ function plannerWidget() {
                 </AutoLayout>
             );
 
+            const yPosition = 15 - menuList.length * 30 - (menuList.length - 1) * 5;
             panelChildList.push(
                 <AutoLayout
                     name="btn-area"
                     positioning="absolute"
                     width={157}
-                    x={282}
-                    y={39}
+                    x={
+                        // @ts-ignore : 타입 중복
+                        data.child ? 299 : 279
+                    }
+                    y={yPosition}
                     padding={10}
                     direction="vertical"
                     spacing={5}
@@ -607,92 +685,6 @@ function plannerWidget() {
         return (
             <AutoLayout name="item" width={"fill-parent"} direction="vertical" key={data.id} fill={"#fff"} stroke={"#E0E0E0"} strokeAlign={"inside"} strokeWidth={1} spacing={20} cornerRadius={10} padding={10} overflow="visible">
                 {panelChildList}
-                {/* 
-                {data.complete ? (
-                    <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
-                        <AutoLayout
-                            width={"fill-parent"}
-                            height={35}
-                            fill={"#6436EA"}
-                            cornerRadius={5}
-                            horizontalAlignItems={"center"}
-                            verticalAlignItems={"center"}
-                            opacity={0.3}
-                            hoverStyle={{
-                                opacity: 1,
-                            }}
-                            onClick={(e) => {
-                                widgetData[data.type][data.id - 1].complete = false;
-                                saveAndArrangementData(widgetData, setWidgetData);
-                            }}
-                        >
-                            <Text fill={"#fff"} fontSize={14}>
-                                uncomplete
-                            </Text>
-                        </AutoLayout>
-                    </AutoLayout>
-                ) : (
-                    <AutoLayout name="btn-area" width={"fill-parent"} spacing={10}>
-                        <AutoLayout
-                            width={"fill-parent"}
-                            height={35}
-                            fill={"#F0EBFD"}
-                            cornerRadius={5}
-                            horizontalAlignItems={"center"}
-                            verticalAlignItems={"center"}
-                            onClick={(e) => {
-                                deleteData(data.id, data.type);
-                            }}
-                        >
-                            <Text fill={"#B29BF5"} fontSize={14}>
-                                Delete
-                            </Text>
-                        </AutoLayout>
-
-                        <AutoLayout
-                            width={"fill-parent"}
-                            height={35}
-                            fill="#6436EA"
-                            cornerRadius={5}
-                            horizontalAlignItems={"center"}
-                            verticalAlignItems={"center"}
-                            onClick={(e) => {
-                                return new Promise((resolve) => {
-                                    figma.showUI(`
-                                    <script>
-                                        window.onmessage = (event) => {
-                                            let data = event.data.pluginMessage;
-                                            parent.postMessage({ pluginMessage: { type: "pointer", data: data } }, "*");
-                                        };
-                                    </script>
-                                `);
-                                    figma.ui.postMessage(widgetData[data.type][data.id - 1]);
-                                });
-                            }}
-                        >
-                            <Text fill={"#fff"} fontSize={14}>
-                                Make Pointer
-                            </Text>
-                        </AutoLayout>
-
-                        <AutoLayout
-                            width={"fill-parent"}
-                            height={35}
-                            fill="#6436EA"
-                            cornerRadius={5}
-                            horizontalAlignItems={"center"}
-                            verticalAlignItems={"center"}
-                            onClick={(e) => {
-                                widgetData[data.type][data.id - 1].complete = true;
-                                saveAndArrangementData(widgetData, setWidgetData);
-                            }}
-                        >
-                            <Text fill={"#fff"} fontSize={14}>
-                                complete
-                            </Text>
-                        </AutoLayout>
-                    </AutoLayout>
-                )} */}
             </AutoLayout>
         );
     }

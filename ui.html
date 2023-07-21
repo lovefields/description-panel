@@ -99,12 +99,25 @@
                 $editPage.querySelector(".description-write-area .textarea").value = data.content;
                 break;
             case "view":
-                console.log(data.content);
                 $viewPage.classList.add("--active");
                 $viewPage.querySelector(".top-info-area").classList.add(`--${data.type}`);
-                $viewPage.querySelector(".top-info-area .number").textContent = data.id;
+                $viewPage.querySelector(".top-info-area .number").textContent = data.displayNumber;
                 $viewPage.querySelector(".top-info-area .type").textContent = data.type.capitalize();
                 $viewPage.querySelector(".description-info-area").innerHTML = data.content.replace(/\n/g, "<br>");
+                break;
+            case "addChild":
+                $editPage.classList.add("--active");
+                $editPage.querySelector(".top-info-area").classList.add(`--${data.type}`);
+                $editPage.querySelector(".top-info-area .number").textContent = `${data.id}-${data.child.length + 1}`;
+                $editPage.querySelector(".top-info-area .type").textContent = data.type.capitalize();
+                $editPage.querySelector(".description-write-area .textarea").value = "";
+                break;
+            case "editChild":
+                $editPage.classList.add("--active");
+                $editPage.querySelector(".top-info-area").classList.add(`--${data.type}`);
+                $editPage.querySelector(".top-info-area .number").textContent = `${data.parentId}-${data.id}`;
+                $editPage.querySelector(".top-info-area .type").textContent = data.type.capitalize();
+                $editPage.querySelector(".description-write-area .textarea").value = data.content;
                 break;
             default:
                 $errorPage.classList.add("--active");
@@ -121,10 +134,10 @@
             $btnSave.forEach(($el) => {
                 $el.addEventListener("click", function () {
                     if (pageData.mode == "new") {
-                        let $descriptionBox = document.querySelector(".new-box .description-write-area");
-                        let $textarea = document.querySelector(".new-box .textarea");
-                        let content = $textarea.value.trim();
-                        let data = {
+                        const $descriptionBox = document.querySelector(".new-box .description-write-area");
+                        const $textarea = document.querySelector(".new-box .textarea");
+                        const content = $textarea.value.trim();
+                        const data = {
                             id: null,
                             type: document.querySelector(".new-box .input-type:checked").value,
                             code: mycode,
@@ -142,17 +155,57 @@
                     }
 
                     if (pageData.mode == "edit") {
-                        let $descriptionBox = document.querySelector(".new-box .description-write-area");
-                        let $textarea = document.querySelector(".edit-box .textarea");
-                        let content = $textarea.value.trim();
-                        let data = {
+                        const $descriptionBox = document.querySelector(".new-box .description-write-area");
+                        const $textarea = document.querySelector(".edit-box .textarea");
+                        const content = $textarea.value.trim();
+                        const data = {
                             id: pageData.id,
                             type: pageData.type,
+                            code: pageData.code,
                             content: content,
+                            child: pageData.child,
                         };
 
                         if (content !== "") {
                             parent.postMessage({ pluginMessage: { type: "edit", data: data } }, "*");
+                        } else {
+                            $descriptionBox.classList.add("--error");
+                        }
+                    }
+
+                    if (pageData.mode === "addChild") {
+                        const $descriptionBox = document.querySelector(".new-box .description-write-area");
+                        const $textarea = document.querySelector(".edit-box .textarea");
+                        const content = $textarea.value.trim();
+                        const data = {
+                            id: -1,
+                            type: pageData.type,
+                            code: pageData.code,
+                            content: content,
+                            parentId: pageData.id,
+                        };
+
+                        if (content !== "") {
+                            parent.postMessage({ pluginMessage: { type: "addChild", data: data } }, "*");
+                        } else {
+                            $descriptionBox.classList.add("--error");
+                        }
+                    }
+
+                    if (pageData.mode === "editChild") {
+                        const $descriptionBox = document.querySelector(".new-box .description-write-area");
+                        const $textarea = document.querySelector(".edit-box .textarea");
+                        const content = $textarea.value.trim();
+                        const data = {
+                            id: pageData.id,
+                            type: pageData.type,
+                            code: pageData.code,
+                            content: content,
+                            parentId: pageData.parentId,
+                        };
+
+                        if (content !== "") {
+                            parent.postMessage({ pluginMessage: { type: "editChild", data: data } }, "*");
                         } else {
                             $descriptionBox.classList.add("--error");
                         }
