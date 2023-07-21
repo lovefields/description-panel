@@ -36,7 +36,7 @@ function plannerWidget() {
         count = 1;
     }
 
-    const widgetWidth = 550 * count;
+    const widgetWidth = 100 + 500 * count + 20 * (count - 1);
     const layoutArray = []; // 화면 드로잉 저장소
 
     useEffect(() => {
@@ -153,6 +153,7 @@ function plannerWidget() {
             ({ propertyName, propertyValue }) => {
                 if (propertyName == "add") {
                     // 일반 패널 추가
+                    closeAllMenu(widgetData, setWidgetData);
                     return new Promise((resolve) => {
                         figma.showUI(__html__, { width: 510, height: 520 });
                         figma.ui.postMessage({
@@ -163,6 +164,7 @@ function plannerWidget() {
                 }
 
                 if (propertyName == "new") {
+                    closeAllMenu(widgetData, setWidgetData);
                     const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
                     const parentNode = widgetNode?.parent as BaseNode;
                     const childNode = widgetNode.cloneWidget({
@@ -185,6 +187,7 @@ function plannerWidget() {
                 }
 
                 if (propertyName == "complete") {
+                    closeAllMenu(widgetData, setWidgetData);
                     for (let [key, value] of Object.entries(widgetData)) {
                         widgetData[key].forEach((row) => {
                             row.complete = true;
@@ -225,27 +228,30 @@ function plannerWidget() {
 
         saveAndArrangementData(widgetData, setWidgetData);
 
-        targetNode.forEach((node) => {
-            const panelCode = node.widgetSyncedState.panelCode;
-            // const displayData = node.widgetSyncedState.displayData;
-
-            if (panelCode === data.code) {
-                // 일치항목 삭제
-                node.remove();
-            }
-
-            if (isParent === true) {
-                // @ts-ignore : 중복 타입 // 부모인경우
-                data.child.forEach((c) => {
-                    if (panelCode === c.code) {
-                        // 일치항목 삭제
-                        node.remove();
-                    }
-                });
-            }
+        let arrangeList: any[] = widgetData[data.type];
+        widgetData[data.type].forEach((node) => {
+            arrangeList = arrangeList.concat(node.child);
         });
 
-        // 넘버링 재정렬
+        targetNode.forEach((node, i) => {
+            const panelCode = node.widgetSyncedState.panelCode;
+            const hasData = arrangeList.filter((item) => item.code === panelCode);
+
+            if (hasData[0]) {
+                node.setWidgetSyncedState({
+                    widgetType: "child",
+                    parentWidgetId: widgetId,
+                    panelCode: hasData[0].code,
+                    displayData: {
+                        displayNumber: hasData[0].child ? String(hasData[0].id) : `${hasData[0].parentId}-${hasData[0].id}`,
+                        type: hasData[0].type,
+                        content: hasData[0].content,
+                    },
+                });
+            } else {
+                node.remove();
+            }
+        });
     }
 
     function listStructure() {
@@ -661,7 +667,7 @@ function plannerWidget() {
                     width={157}
                     x={
                         // @ts-ignore : 타입 중복
-                        data.child ? 299 : 279
+                        data.child ? 308 : 289
                     }
                     y={yPosition}
                     padding={10}

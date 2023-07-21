@@ -35,6 +35,7 @@ export function saveAndArrangementData(data: WidgetData, setWidgetData: Function
         data[key].forEach((value: DescriptionItem, i: number) => {
             data[key][i].id = i + 1;
             value.child.forEach((_, k: number) => {
+                data[key][i].child[k].parentId = i + 1;
                 data[key][i].child[k].id = k + 1;
             });
         });
