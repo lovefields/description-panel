@@ -1,15 +1,89 @@
-import { WidgetData, DescriptionItem } from "./type";
+import type { PannelData, WidgetData, DescriptionItem } from "./type";
 
 export function setPanelCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let str = "";
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 16; i += 1) {
         str += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
     return str;
 }
+
+export function getLayoutSize({ visibleList, invisibleList, trackingList, designList }: { visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[] }) {
+    let isEmpty: boolean = true;
+    let width: number = 100;
+
+    if (visibleList.length > 0) {
+        isEmpty = false;
+        width += 520;
+    }
+
+    if (invisibleList.length > 0) {
+        isEmpty = false;
+        width += 520;
+    }
+
+    if (trackingList.length > 0) {
+        isEmpty = false;
+        width += 520;
+    }
+
+    if (designList.length > 0) {
+        isEmpty = false;
+        width += 520;
+    }
+
+    if (isEmpty === true) {
+        width += 520;
+    }
+
+    width -= 20;
+
+    return width;
+}
+
+export function isEmptyList({ visibleList, invisibleList, trackingList, designList }: { visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[] }) {
+    let isEmpty: boolean = true;
+
+    if (visibleList.length > 0) {
+        isEmpty = false;
+    }
+
+    if (invisibleList.length > 0) {
+        isEmpty = false;
+    }
+
+    if (trackingList.length > 0) {
+        isEmpty = false;
+    }
+
+    if (designList.length > 0) {
+        isEmpty = false;
+    }
+
+    return isEmpty;
+}
+
+export function openAddModal() {
+    figma.showUI(__uiFiles__.new, { width: 900, height: 600 });
+    // TODO : 뎁스정보 전달하기
+    figma.ui.postMessage({});
+}
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 // 모든 메뉴 닫기
 export function closeAllMenu(data: WidgetData, setWidgetData: Function) {

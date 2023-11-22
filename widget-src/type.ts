@@ -1,3 +1,31 @@
+interface LinkItem {
+    name: string;
+    value: string;
+}
+
+interface DefaultPannelData {
+    code: string;
+    index: number;
+    complete: boolean;
+    content: string;
+    linkList: LinkItem[];
+    pointerList: string[];
+}
+
+export interface PannelData extends DefaultPannelData {
+    childList: ChildPannelData[];
+}
+
+export interface ChildPannelData extends DefaultPannelData {
+    parentCode: string;
+}
+
+//
+//
+//
+//
+//
+//
 // 디스크립션 기본 정보 구조
 interface DefaultItemObject {
     id: number;
