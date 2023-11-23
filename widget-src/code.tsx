@@ -1,9 +1,9 @@
 import type { PannelData, DescriptionItem, WidgetData, DisplayItemData, ChildItem } from "./type";
-import { getLayoutSize, goToNumber, saveAndArrangementData, setPanelCode, closeAllMenu } from "./util";
+import { getLayoutSize, addPannelData, goToNumber, saveAndArrangementData, setPanelCode, closeAllMenu } from "./util";
 import { getListStructure } from "./ui";
 
 const { widget } = figma;
-const { useWidgetId, useSyncedState, usePropertyMenu, AutoLayout, Text, Input, useEffect, Rectangle } = widget;
+const { useWidgetId, useSyncedState, useEffect, usePropertyMenu, AutoLayout, Text, Input, Rectangle } = widget;
 
 function plannerWidget() {
     const [widgetMode] = useSyncedState<string>("widgetMode", "list");
@@ -18,10 +18,35 @@ function plannerWidget() {
         const [trackingList, setTrackingList] = useSyncedState<PannelData[]>("trackingList", []);
         const [designList, setDesignList] = useSyncedState<PannelData[]>("designList", []);
 
+        const widgetId: string = useWidgetId();
+        const widgetWidth = getLayoutSize({
+            visibleList: visibleList,
+            invisibleList: invisibleList,
+            trackingList: trackingList,
+            designList: designList,
+        });
+
         useEffect(() => {
             figma.ui.onmessage = (msg) => {
                 const data = msg.data;
 
+                // 기본 패널 추가
+                if (msg.type === "addPannel") {
+                    addPannelData({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
+
+                // 메세지 표기
                 if (msg.type === "message") {
                     figma.notify(data.text, {
                         error: data.error,
@@ -34,20 +59,12 @@ function plannerWidget() {
             };
         });
 
-        const widgetId: string = useWidgetId();
-        const widgetWidth = getLayoutSize({
-            visibleList: visibleList,
-            invisibleList: invisibleList,
-            trackingList: trackingList,
-            designList: designList,
-        });
-
         structure = (
             <AutoLayout
                 name="wrap"
                 width={widgetWidth}
                 direction={"vertical"}
-                spacing={60}
+                spacing={50}
                 padding={50}
                 cornerRadius={10}
                 stroke={"#E0D7FB"}

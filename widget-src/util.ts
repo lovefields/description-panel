@@ -1,4 +1,4 @@
-import type { PannelData, WidgetData, DescriptionItem } from "./type";
+import type { PannelData, WidgetData, DescriptionItem, AddPannelArgument } from "./type";
 
 export function setPanelCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -66,11 +66,53 @@ export function isEmptyList({ visibleList, invisibleList, trackingList, designLi
     return isEmpty;
 }
 
+// 기본 패널 추가 모달
 export function openAddModal() {
     figma.showUI(__uiFiles__.new, { width: 900, height: 600 });
-    // TODO : 뎁스정보 전달하기
-    figma.ui.postMessage({});
 }
+
+// 기본 패널 정보 추가 함수
+export function addPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: AddPannelArgument) {
+    let targetFunction: any;
+    let targetValue: any;
+
+    switch (data.pannelType) {
+        case "visible":
+            targetFunction = setVisibleList;
+            targetValue = visibleList;
+            break;
+        case "invisible":
+            targetFunction = setInvisibleList;
+            targetValue = invisibleList;
+            break;
+        case "tracking":
+            targetFunction = setTrackingList;
+            targetValue = trackingList;
+            break;
+        case "design":
+            targetFunction = setDesignList;
+            targetValue = designList;
+            break;
+    }
+
+    targetFunction(
+        targetValue.concat([
+            {
+                index: targetValue.length,
+                code: setPanelCode(),
+                complete: false,
+                linkList: data.linkList,
+                content: data.content,
+                pointerList: [],
+                childList: [],
+            },
+        ])
+    );
+}
+
+
+
+
 
 //
 //

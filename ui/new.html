@@ -102,21 +102,14 @@
         }
 
         if (suitable === true) {
-            console.log(type);
             parent.postMessage(
                 {
                     pluginMessage: {
                         type: "addPannel",
                         data: {
-                            type: type,
-                            pannelData: {
-                                code: "",
-                                index: 0,
-                                complete: false,
-                                content: $textarea.value.trim(),
-                                linkList: linkList,
-                                pointerList: [],
-                            },
+                            pannelType: type,
+                            content: $textarea.value.trim(),
+                            linkList: linkList,
                         },
                     },
                 },

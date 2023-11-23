@@ -17,7 +17,26 @@ export interface PannelData extends DefaultPannelData {
 }
 
 export interface ChildPannelData extends DefaultPannelData {
+    parentIndex: number;
     parentCode: string;
+}
+
+interface AddPannelData {
+    pannelType: string;
+    content: string;
+    linkList: LinkItem[];
+}
+
+export interface AddPannelArgument {
+    visibleList: PannelData[];
+    invisibleList: PannelData[];
+    trackingList: PannelData[];
+    designList: PannelData[];
+    setVisibleList: Function;
+    setInvisibleList: Function;
+    setTrackingList: Function;
+    setDesignList: Function;
+    data: AddPannelData;
 }
 
 //
