@@ -1,4 +1,4 @@
-import type { PannelData, WidgetData, DescriptionItem, AddPannelArgument } from "./type";
+import type { PannelData, WidgetData, DescriptionItem, AddPannelArgument, ChildPannelData } from "./type";
 
 export function setPanelCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -71,6 +71,18 @@ export function openAddModal() {
     figma.showUI(__uiFiles__.new, { width: 900, height: 600 });
 }
 
+// 자식 패널 추가 모달
+
+// 패널 수정 모달
+export function openEditModal(type: string, isChild: boolean, data: PannelData | ChildPannelData) {
+    figma.showUI(__uiFiles__.edit, { width: 900, height: 600 });
+    figma.ui.postMessage({
+        type: type,
+        isChild: isChild,
+        data: data,
+    });
+}
+
 // 기본 패널 정보 추가 함수
 export function addPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: AddPannelArgument) {
     let targetFunction: any;
@@ -109,10 +121,6 @@ export function addPannelData({ visibleList, invisibleList, trackingList, design
         ])
     );
 }
-
-
-
-
 
 //
 //

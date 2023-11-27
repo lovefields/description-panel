@@ -7,6 +7,7 @@
     "containsWidget": true,
     "widgetApi": "1.0.0",
     "ui": {
-        "new": "./ui/new.html"
+        "new": "./ui/new.html",
+        "edit": "./ui/edit.html"
     }
 }

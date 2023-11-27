@@ -39,6 +39,18 @@ export interface AddPannelArgument {
     data: AddPannelData;
 }
 
+export interface MenuData {
+    active: boolean;
+    x: number;
+    y: number;
+    isChild: boolean;
+    isComplate: boolean;
+    lastCode: string;
+    targetType: string;
+    targetIdx: number;
+    targetParentIdx: number | null;
+}
+
 //
 //
 //

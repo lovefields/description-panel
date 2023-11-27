@@ -1,6 +1,6 @@
-import type { PannelData, DescriptionItem, WidgetData, DisplayItemData, ChildItem } from "./type";
-import { getLayoutSize, addPannelData, goToNumber, saveAndArrangementData, setPanelCode, closeAllMenu } from "./util";
-import { getListStructure } from "./ui";
+import type { PannelData, MenuData, WidgetData, DisplayItemData, ChildItem } from "./type";
+import { getLayoutSize, addPannelData, openAddModal, saveAndArrangementData, setPanelCode, closeAllMenu } from "./util";
+import { getListStructure, getMenuStructure } from "./ui";
 
 const { widget } = figma;
 const { useWidgetId, useSyncedState, useEffect, usePropertyMenu, AutoLayout, Text, Input, Rectangle } = widget;
@@ -17,9 +17,28 @@ function plannerWidget() {
         const [invisibleList, setInvisibleList] = useSyncedState<PannelData[]>("invisibleList", []);
         const [trackingList, setTrackingList] = useSyncedState<PannelData[]>("trackingList", []);
         const [designList, setDesignList] = useSyncedState<PannelData[]>("designList", []);
+        const [menuData, setMenuData] = useSyncedState<MenuData>("menuData", {
+            active: false,
+            x: 0,
+            y: 0,
+            isChild: false,
+            isComplate: false,
+            lastCode: "",
+            targetType: "",
+            targetIdx: -1,
+            targetParentIdx: null,
+        });
 
-        const widgetId: string = useWidgetId();
+        // const widgetId: string = useWidgetId();
         const widgetWidth = getLayoutSize({
+            visibleList: visibleList,
+            invisibleList: invisibleList,
+            trackingList: trackingList,
+            designList: designList,
+        });
+        const menuStructure = getMenuStructure({
+            menuData: menuData,
+            setMenuData: setMenuData,
             visibleList: visibleList,
             invisibleList: invisibleList,
             trackingList: trackingList,
@@ -58,6 +77,33 @@ function plannerWidget() {
                 }
             };
         });
+
+        usePropertyMenu(
+            [
+                {
+                    itemType: "action",
+                    propertyName: "add",
+                    tooltip: "Add New Description",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "complete",
+                    tooltip: "Complete All",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "new",
+                    tooltip: "New Widget",
+                },
+            ],
+            ({ propertyName, propertyValue }) => {
+                if (propertyName == "add") {
+                    return new Promise((resolve) => {
+                        openAddModal();
+                    });
+                }
+            }
+        );
 
         structure = (
             <AutoLayout
@@ -121,7 +167,10 @@ function plannerWidget() {
                     invisibleList: invisibleList,
                     trackingList: trackingList,
                     designList: designList,
+                    menuData: menuData,
+                    setMenuData: setMenuData,
                 })}
+                {menuStructure}
             </AutoLayout>
         );
     } else {
