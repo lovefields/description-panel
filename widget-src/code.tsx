@@ -1,9 +1,9 @@
-import type { PannelData, MenuData, WidgetData, DisplayItemData, ChildItem } from "./type";
-import { getLayoutSize, addPannelData, openAddModal, saveAndArrangementData, setPanelCode, closeAllMenu } from "./util";
-import { getListStructure, getMenuStructure } from "./ui";
+import type { PannelData, MenuData, PointerData } from "./type";
+import { getLayoutSize, addPannelData, openAddModal, editPannelData, createPinter, openViewModal, addChildPannelData, editChildPannelData } from "./util";
+import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
-const { useWidgetId, useSyncedState, useEffect, usePropertyMenu, AutoLayout, Text, Input, Rectangle } = widget;
+const { useWidgetNodeId, useSyncedState, useEffect, usePropertyMenu, AutoLayout, Text, Input, Rectangle } = widget;
 
 function plannerWidget() {
     const [widgetMode] = useSyncedState<string>("widgetMode", "list");
@@ -29,7 +29,7 @@ function plannerWidget() {
             targetParentIdx: null,
         });
 
-        // const widgetId: string = useWidgetId();
+        const widgetId: string = useWidgetNodeId();
         const widgetWidth = getLayoutSize({
             visibleList: visibleList,
             invisibleList: invisibleList,
@@ -65,6 +65,72 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
+                // 자식 패널 추가
+                if (msg.type === "addChildPannel") {
+                    addChildPannelData({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
+
+                // 패널 정보 수정
+                if (msg.type === "editPannel") {
+                    editPannelData({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
+
+                // 자식 패널 정보 수정
+                if (msg.type === "editChildPannel") {
+                    editChildPannelData({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
+
+                // 포인터 생성
+                if (msg.type === "createPointer") {
+                    createPinter({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                        widgetId: widgetId,
+                    });
+                    console.log(data);
+                    figma.closePlugin();
+                }
+
                 // 메세지 표기
                 if (msg.type === "message") {
                     figma.notify(data.text, {
@@ -97,7 +163,7 @@ function plannerWidget() {
                 },
             ],
             ({ propertyName, propertyValue }) => {
-                if (propertyName == "add") {
+                if (propertyName === "add") {
                     return new Promise((resolve) => {
                         openAddModal();
                     });
@@ -174,11 +240,66 @@ function plannerWidget() {
             </AutoLayout>
         );
     } else {
-        structure = (
-            <AutoLayout>
-                <Text>I'm pointer</Text>
-            </AutoLayout>
+        const [pointerData] = useSyncedState<PointerData>("pointerData", {
+            viewText: "",
+            type: "",
+            content: "",
+            linkList: [],
+            index: -1,
+            parentIndex: null,
+            parentWidgetId: "",
+        });
+        const [arrowType, setArrowType] = useSyncedState<string>("arrowType", "none");
+
+        useEffect(() => {
+            figma.ui.onmessage = (msg) => {
+                figma.closePlugin();
+            };
+        });
+
+        usePropertyMenu(
+            [
+                {
+                    itemType: "action",
+                    propertyName: "view",
+                    tooltip: "View info",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "arrow",
+                    tooltip: `Arrow : ${arrowType}`,
+                },
+            ],
+            ({ propertyName, propertyValue }) => {
+                if (propertyName === "view") {
+                    return new Promise((resolve) => {
+                        openViewModal(pointerData.viewText, pointerData.type, pointerData.content, pointerData.linkList);
+                    });
+                }
+
+                if (propertyName === "arrow") {
+                    switch (arrowType) {
+                        case "none":
+                            setArrowType("top");
+                            break;
+                        case "top":
+                            setArrowType("right");
+                            break;
+                        case "right":
+                            setArrowType("bottom");
+                            break;
+                        case "bottom":
+                            setArrowType("left");
+                            break;
+                        case "left":
+                            setArrowType("none");
+                            break;
+                    }
+                }
+            }
         );
+
+        structure = makePointerStructure(pointerData, arrowType);
     }
 
     return structure;

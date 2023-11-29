@@ -1,4 +1,4 @@
-interface LinkItem {
+export interface LinkItem {
     name: string;
     value: string;
 }
@@ -27,7 +27,7 @@ interface AddPannelData {
     linkList: LinkItem[];
 }
 
-export interface AddPannelArgument {
+interface PannelArgument {
     visibleList: PannelData[];
     invisibleList: PannelData[];
     trackingList: PannelData[];
@@ -36,7 +36,46 @@ export interface AddPannelArgument {
     setInvisibleList: Function;
     setTrackingList: Function;
     setDesignList: Function;
+}
+
+export interface GetPannelStructure extends PannelArgument {
+    type: string;
+}
+
+export interface AddPannelArgument extends PannelArgument {
     data: AddPannelData;
+}
+
+export interface AddChildPannelArgument extends PannelArgument {
+    data: {
+        content: string;
+        linkList: LinkItem[];
+        pannelType: string;
+        parentIndex: number;
+    };
+}
+
+export interface EditPannelArgument extends PannelArgument {
+    data: {
+        pannelType: string;
+        pannelData: PannelData;
+    };
+}
+
+export interface CreatePinterArgument extends PannelArgument {
+    data: {
+        pannelType: string;
+        isChild: boolean;
+        pannelData: PannelData | ChildPannelData;
+    };
+    widgetId: string;
+}
+
+export interface EditChildPannelArgument extends PannelArgument {
+    data: {
+        pannelType: string;
+        pannelData: ChildPannelData;
+    };
 }
 
 export interface MenuData {
@@ -51,44 +90,12 @@ export interface MenuData {
     targetParentIdx: number | null;
 }
 
-//
-//
-//
-//
-//
-//
-// 디스크립션 기본 정보 구조
-interface DefaultItemObject {
-    id: number;
-    type: string;
-    code: string;
-    content: string;
-    complete: boolean;
-    openMenu: boolean;
-}
-
-// 화면 표기용 정보 구조
-export interface DisplayItemData {
-    displayNumber: string;
+export interface PointerData {
+    viewText: string;
     type: string;
     content: string;
-}
-
-// 서브 디스크립션 정보 구조
-export interface ChildItem extends DefaultItemObject {
-    parentId: number;
-}
-
-// 디스크립션 정보 구조
-export interface DescriptionItem extends DefaultItemObject {
-    child: ChildItem[];
-}
-
-// 위젯 정보 구조
-export interface WidgetData {
-    [key: string]: DescriptionItem[];
-    visible: DescriptionItem[];
-    invisible: DescriptionItem[];
-    tracking: DescriptionItem[];
-    design: DescriptionItem[];
+    linkList: LinkItem[];
+    index: number;
+    parentIndex: number | null;
+    parentWidgetId: string;
 }

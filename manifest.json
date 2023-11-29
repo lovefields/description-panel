@@ -8,6 +8,8 @@
     "widgetApi": "1.0.0",
     "ui": {
         "new": "./ui/new.html",
-        "edit": "./ui/edit.html"
+        "newChild": "./ui/newChild.html",
+        "edit": "./ui/edit.html",
+        "view": "./ui/view.html"
     }
 }

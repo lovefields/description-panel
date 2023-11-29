@@ -31,7 +31,7 @@
 
     <div class="row btn-area">
         <button class="btn btn-cancel --cancel">Cancel</button>
-        <button class="btn btn-save">Save</button>
+        <button class="btn btn-save">Add</button>
     </div>
 </div>
 
@@ -85,85 +85,59 @@
 
     // 정보 수신
     window.onmessage = (event) => {
-        if (event.data.pluginMessage !== "") {
-            const editData = event.data.pluginMessage;
+        const parentData = event.data.pluginMessage;
 
-            document.querySelector(".top-info-area").classList.add(`--${editData.type}`);
-            if (editData.isChild === true) {
-                document.querySelector(".top-info-area .number").textContent = `${editData.data.parentIndex + 1} - ${editData.data.index + 1}`;
+        document.querySelector(".top-info-area").classList.add(`--${parentData.type}`);
+        document.querySelector(".top-info-area .number").textContent = `${parentData.data.index + 1}-${parentData.data.childList.length + 1}`;
+        document.querySelector(".top-info-area .type").textContent = parentData.type.capitalize();
+
+        // 저장 이벤트
+        $btnSave.addEventListener("click", () => {
+            const linkValidation = updateLinkList(true);
+            const $textarea = document.querySelector(".description-write-area .js-description");
+            let suitable = true;
+
+            if ($textarea.value.trim() === "") {
+                suitable = false;
+                $textarea.classList.add("--error");
             } else {
-                document.querySelector(".top-info-area .number").textContent = editData.data.index + 1;
+                $textarea.classList.remove("--error");
             }
-            document.querySelector(".top-info-area .type").textContent = editData.type.capitalize();
-            document.querySelector(".description-write-area .js-description").value = editData.data.content;
-            linkList = editData.data.linkList;
-            renderingLinkList();
 
-            // 저장 이벤트
-            $btnSave.addEventListener("click", () => {
-                const linkValidation = updateLinkList(true);
-                const $textarea = document.querySelector(".description-write-area .js-description");
-                let suitable = true;
+            if (linkValidation === false) {
+                suitable = false;
+            }
 
-                if ($textarea.value.trim() === "") {
-                    suitable = false;
-                    $textarea.classList.add("--error");
-                } else {
-                    $textarea.classList.remove("--error");
-                }
-
-                if (linkValidation === false) {
-                    suitable = false;
-                }
-
-                if (suitable === true) {
-                    const newData = { ...editData.data, content: $textarea.value.trim(), linkList: linkList };
-
-                    if (editData.isChild === true) {
-                        parent.postMessage(
-                            {
-                                pluginMessage: {
-                                    type: "editChildPannel",
-                                    data: {
-                                        pannelType: editData.type,
-                                        pannelData: newData,
-                                    },
-                                },
-                            },
-                            "*"
-                        );
-                    } else {
-                        parent.postMessage(
-                            {
-                                pluginMessage: {
-                                    type: "editPannel",
-                                    data: {
-                                        pannelType: editData.type,
-                                        pannelData: newData,
-                                    },
-                                },
-                            },
-                            "*"
-                        );
-                    }
-                } else {
-                    parent.postMessage(
-                        {
-                            pluginMessage: {
-                                type: "message",
-                                data: {
-                                    error: true,
-                                    text: "You must be write all input field.",
-                                },
+            if (suitable === true) {
+                parent.postMessage(
+                    {
+                        pluginMessage: {
+                            type: "addChildPannel",
+                            data: {
+                                pannelType: parentData.type,
+                                parentIndex: parentData.data.index,
+                                content: $textarea.value.trim(),
+                                linkList: linkList,
                             },
                         },
-                        "*"
-                    );
-                }
-            });
-        } else {
-            parent.postMessage({ pluginMessage: { type: "close" } }, "*");
-        }
+                    },
+                    "*"
+                );
+            } else {
+                parent.postMessage(
+                    {
+                        pluginMessage: {
+                            type: "message",
+                            data: {
+                                error: true,
+                                text: "You must be write all input field with right value.",
+                            },
+                        },
+                    },
+                    "*"
+                );
+            }
+        });
     };
 
     // 링크 정보 업데이트
@@ -280,12 +254,6 @@
         justify-content: space-between;
         align-items: center;
         flex: none;
-    }
-
-    .top-info-area {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
 
     .top-info-area .number {

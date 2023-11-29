@@ -1,0 +1,190 @@
+<div class="box">
+    <div class="col left-area">
+        <div class="item top-info-area">
+            <p class="number"></p>
+            <p class="type"></p>
+        </div>
+
+        <div class="item description-area"></div>
+    </div>
+
+    <div class="col">
+        <div class="link-list-area"></div>
+    </div>
+</div>
+
+<script>
+    window.focus();
+
+    Object.defineProperty(String.prototype, "capitalize", {
+        value: function () {
+            return this.charAt(0).toUpperCase() + this.slice(1);
+        },
+        enumerable: false,
+    });
+
+    document.addEventListener("keyup", (event) => {
+        if (event.code === "Escape") {
+            parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+        }
+    });
+
+    // 정보 수신
+    window.onmessage = (event) => {
+        const $linkArea = document.querySelector(".link-list-area");
+        const viewData = event.data.pluginMessage;
+
+        document.querySelector(".top-info-area").classList.add(`--${viewData.pannelType}`);
+        document.querySelector(".top-info-area .number").textContent = viewData.viewNumber;
+        document.querySelector(".top-info-area .type").textContent = viewData.pannelType.capitalize();
+        document.querySelector(".description-area").innerHTML = viewData.content.replace(/\n/g, "<br>");
+
+        if (viewData.linkList.length === 0) {
+            document.querySelector(".box").classList.add("--single");
+            $linkArea.remove();
+        } else {
+            let linkList = "";
+
+            viewData.linkList.forEach((link) => {
+                linkList += `<button class="link" data-href="${link.value}">${link.name}</button>`;
+            });
+
+            $linkArea.innerHTML = linkList;
+
+            $linkArea.querySelectorAll(".link").forEach(($el) => {
+                $el.addEventListener("click", function () {
+                    const url = this.dataset["href"];
+
+                    window.open(url);
+                });
+            });
+        }
+    };
+</script>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+    }
+
+    .box {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 20px;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .box.--single {
+        display: block;
+        grid-template-columns: unset;
+        column-gap: 0;
+    }
+
+    .box.--single .left-area {
+        height: 100%;
+    }
+
+    .box .left-area {
+        display: flex;
+        flex-direction: column;
+        row-gap: 20px;
+    }
+
+    .top-info-area {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .top-info-area .number {
+        display: inline-block;
+        height: 28px;
+        margin: 0;
+        padding: 0 10px;
+        color: #fff;
+        border-radius: 8px;
+        font-size: 16px;
+        line-height: 28px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .top-info-area .type {
+        display: inline-block;
+        margin: 0;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .top-info-area.--visible .number {
+        background: #6436ea;
+    }
+
+    .top-info-area.--visible .type {
+        background: #f0ebfd;
+        color: #6436ea;
+    }
+
+    .top-info-area.--invisible .number {
+        background: #f66134;
+    }
+
+    .top-info-area.--invisible .type {
+        background: #ffefea;
+        color: #f66134;
+    }
+
+    .top-info-area.--tracking .number {
+        background: #47b6fe;
+    }
+
+    .top-info-area.--tracking .type {
+        background: #ecf7ff;
+        color: #47b6fe;
+    }
+
+    .top-info-area.--design .number {
+        background: #38c66b;
+    }
+
+    .top-info-area.--design .type {
+        background: #e9faef;
+        color: #38c66b;
+    }
+
+    .description-area {
+        flex: 1;
+        padding: 4px 8px;
+        background: #fafafa;
+        color: #616161;
+        border-radius: 5px;
+        font-size: 16px;
+        line-height: 1.5;
+        overflow-y: auto;
+    }
+
+    .link-list-area {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .link-list-area .link {
+        display: inline-block;
+        padding: 2px 10px;
+        background: #e3f4ff;
+        color: #4092c7;
+        border: 0;
+        border-radius: 4px;
+        font-size: 14px;
+        outline: 0;
+        cursor: pointer;
+    }
+</style>
