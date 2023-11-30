@@ -1,4 +1,4 @@
-import type { PannelData, AddPannelArgument, ChildPannelData, EditPannelArgument, CreatePinterArgument, LinkItem, PointerData, AddChildPannelArgument, GetPannelStructure, EditChildPannelArgument } from "./type";
+import type { PannelData, AddPannelArgument, ChildPannelData, EditPannelArgument, CreatePinterArgument, LinkItem, PointerData, AddChildPannelArgument, GetPannelStructure, EditChildPannelArgument, CompletePinterArgument, CompletePannelArgument, MovePannelArgument } from "./type";
 
 export function setPanelCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -307,4 +307,279 @@ export function goToNumber(list: string[]) {
     });
 
     figma.viewport.scrollAndZoomIntoView(nodeList);
+}
+
+// 패널 완료 토글
+export function setPannelComplete({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: CompletePinterArgument) {
+    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+
+    if (data.isChild === true) {
+        const pannelData = data.pannelData as ChildPannelData;
+
+        targetValue[pannelData.parentIndex].childList[pannelData.index].complete = !pannelData.complete;
+    } else {
+        const pannelData = data.pannelData as PannelData;
+
+        targetValue[pannelData.index].complete = !pannelData.complete;
+    }
+
+    targetFunction(targetValue);
+}
+
+// 전채 패널 상태 변경
+export function setAllPannelCompleteStatus({ status, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList }: CompletePannelArgument) {
+    visibleList.forEach((item) => {
+        item.complete = status;
+
+        item.childList.forEach((child) => {
+            child.complete = status;
+        });
+    });
+
+    invisibleList.forEach((item) => {
+        item.complete = status;
+
+        item.childList.forEach((child) => {
+            child.complete = status;
+        });
+    });
+
+    trackingList.forEach((item) => {
+        item.complete = status;
+
+        item.childList.forEach((child) => {
+            child.complete = status;
+        });
+    });
+
+    designList.forEach((item) => {
+        item.complete = status;
+
+        item.childList.forEach((child) => {
+            child.complete = status;
+        });
+    });
+
+    setVisibleList(visibleList);
+    setInvisibleList(invisibleList);
+    setTrackingList(trackingList);
+    setDesignList(designList);
+}
+
+// 패널 순서 이동
+export function movePannelItem({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data, move }: MovePannelArgument) {
+    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+    let suitable = true;
+
+    if (data.pannelData.index === 0 && move === "up") {
+        figma.notify("Panel is already the first item.");
+        suitable = false;
+    }
+
+    if (move === "down") {
+        if (data.isChild === true) {
+            if (data.pannelData.index === targetValue[(data.pannelData as ChildPannelData).parentIndex].childList.length - 1) {
+                figma.notify("Panel is already the last item.");
+                suitable = false;
+            }
+        } else {
+            if (data.pannelData.index === targetValue.length - 1) {
+                figma.notify("Panel is already the last item.");
+                suitable = false;
+            }
+        }
+    }
+
+    if (suitable === true) {
+        if (data.isChild === true) {
+            const childData = data.pannelData as ChildPannelData;
+
+            if (move === "up") {
+                let preData = targetValue[childData.parentIndex].childList[childData.index - 1];
+                let curruntData = targetValue[childData.parentIndex].childList[childData.index];
+
+                targetValue[childData.parentIndex].childList[childData.index - 1] = curruntData;
+                targetValue[childData.parentIndex].childList[childData.index] = preData;
+
+                targetValue[childData.parentIndex].childList = arrangementChildPannel(targetValue[childData.parentIndex]);
+            } else {
+                let nextData = targetValue[childData.parentIndex].childList[childData.index + 1];
+                let curruntData = targetValue[childData.parentIndex].childList[childData.index];
+
+                targetValue[childData.parentIndex].childList[childData.index + 1] = curruntData;
+                targetValue[childData.parentIndex].childList[childData.index] = nextData;
+
+                targetValue[childData.parentIndex].childList = arrangementChildPannel(targetValue[childData.parentIndex]);
+            }
+        } else {
+            if (move === "up") {
+                let preData = targetValue[data.pannelData.index - 1];
+                let curruntData = targetValue[data.pannelData.index];
+
+                targetValue[data.pannelData.index - 1] = curruntData;
+                targetValue[data.pannelData.index] = preData;
+
+                targetValue = arrangementPannel(targetValue);
+            } else {
+                let nextData = targetValue[data.pannelData.index + 1];
+                let curruntData = targetValue[data.pannelData.index];
+
+                targetValue[data.pannelData.index + 1] = curruntData;
+                targetValue[data.pannelData.index] = nextData;
+
+                targetValue = arrangementPannel(targetValue);
+            }
+        }
+
+        targetFunction(targetValue);
+    }
+}
+
+// 패널 데이터 정리
+function arrangementPannel(list: PannelData[]) {
+    list.forEach((pannel, index) => {
+        pannel.index = index;
+        pannel.childList = arrangementChildPannel(pannel);
+        pannel.pointerList.forEach((nodeId) => {
+            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (widgetNode !== null) {
+                let defaultData = widgetNode.widgetSyncedState["pointerData"] as PointerData;
+
+                defaultData.viewText = String(pannel.index + 1);
+
+                widgetNode.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: defaultData,
+                    arrowType: widgetNode.widgetSyncedState["arrowType"],
+                });
+            }
+        });
+    });
+
+    return list;
+}
+
+// 자식 패널 정리
+function arrangementChildPannel(list: PannelData) {
+    list.childList.forEach((child, index) => {
+        child.index = index;
+        child.parentIndex = list.index;
+
+        child.pointerList.forEach((nodeId) => {
+            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (widgetNode !== null) {
+                let defaultData = widgetNode.widgetSyncedState["pointerData"] as PointerData;
+
+                defaultData.viewText = `${child.parentIndex + 1}-${child.index + 1}`;
+
+                widgetNode.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: defaultData,
+                    arrowType: widgetNode.widgetSyncedState["arrowType"],
+                });
+            }
+        });
+    });
+
+    return list.childList;
+}
+
+// 패널 삭제
+export function deletePannelItem({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: CompletePinterArgument) {
+    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+
+    if (data.isChild === true) {
+        const pannelData = data.pannelData as ChildPannelData;
+
+        targetValue[pannelData.parentIndex].childList.splice(pannelData.index, 1);
+    } else {
+        const pannelData = data.pannelData as PannelData;
+
+        targetValue.splice(pannelData.index, 1);
+
+        pannelData.childList.forEach((child: ChildPannelData) => {
+            child.pointerList.forEach((nodeId: string) => {
+                const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+                if (widgetNode !== null) {
+                    widgetNode.remove();
+                }
+            });
+        });
+    }
+
+    data.pannelData.pointerList.forEach((nodeId: string) => {
+        const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+        if (widgetNode !== null) {
+            widgetNode.remove();
+        }
+    });
+
+    targetFunction(targetValue);
+}
+
+// 데이터 내보내기
+export function dataExport({ widgetTitle, visibleList, invisibleList, trackingList, designList }: { widgetTitle: string; visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[] }) {
+    if (isEmptyList({ visibleList, invisibleList, trackingList, designList }) === false) {
+        let data: { [key: string]: PannelData[] } = {};
+
+        if (visibleList.length > 0) {
+            visibleList = clearPointerList(visibleList);
+            data["visibleList"] = visibleList;
+        }
+
+        if (invisibleList.length > 0) {
+            invisibleList = clearPointerList(invisibleList);
+            data["invisibleList"] = invisibleList;
+        }
+
+        if (trackingList.length > 0) {
+            trackingList = clearPointerList(trackingList);
+            data["trackingList"] = trackingList;
+        }
+
+        if (designList.length > 0) {
+            designList = clearPointerList(designList);
+            data["designList"] = designList;
+        }
+
+        figma.showUI(__uiFiles__.export, { width: 400, height: 300 });
+        figma.ui.postMessage(JSON.stringify(data));
+    } else {
+        figma.notify("You didn't have any Pannel data.");
+    }
+}
+
+function clearPointerList(list: PannelData[]) {
+    list.forEach((item) => {
+        item.pointerList = [];
+
+        item.childList.forEach((child) => {
+            child.pointerList = [];
+        });
+    });
+
+    return list;
+}
+
+// 데이터 불러오기
+export function setImportData({ data, setVisibleList, setInvisibleList, setTrackingList, setDesignList }: { data: any; setVisibleList: Function; setInvisibleList: Function; setTrackingList: Function; setDesignList: Function }) {
+    if (data.visibleList !== undefined) {
+        setVisibleList(data.visibleList);
+    }
+
+    if (data.invisibleList !== undefined) {
+        setInvisibleList(data.invisibleList);
+    }
+
+    if (data.trackingList !== undefined) {
+        setTrackingList(data.trackingList);
+    }
+
+    if (data.designList !== undefined) {
+        setDesignList(data.designList);
+    }
 }

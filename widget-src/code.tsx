@@ -1,9 +1,9 @@
 import type { PannelData, MenuData, PointerData } from "./type";
-import { getLayoutSize, addPannelData, openAddModal, editPannelData, createPinter, openViewModal, addChildPannelData, editChildPannelData } from "./util";
+import { getLayoutSize, addPannelData, openAddModal, editPannelData, createPinter, openViewModal, addChildPannelData, editChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, dataExport,setImportData } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
-const { useWidgetNodeId, useSyncedState, useEffect, usePropertyMenu, AutoLayout, Text, Input, Rectangle } = widget;
+const { useWidgetNodeId, useSyncedState, useEffect, usePropertyMenu, AutoLayout, Input } = widget;
 
 function plannerWidget() {
     const [widgetMode] = useSyncedState<string>("widgetMode", "list");
@@ -131,10 +131,82 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
+                // 완료 설정
+                if (msg.type === "complete") {
+                    setPannelComplete({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
+
+                // 순서 올리기
+                if (msg.type === "listUp") {
+                    movePannelItem({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                        move: "up",
+                    });
+                    figma.closePlugin();
+                }
+
+                // 순서 내기리
+                if (msg.type === "listDown") {
+                    movePannelItem({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                        move: "down",
+                    });
+                    figma.closePlugin();
+                }
+
+                // 삭제
+                if (msg.type === "deletePannel") {
+                    deletePannelItem({
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
+
+                // 데이터 불러오기
+                if (msg.type === "importData") {
+                    setImportData({ data: data, setVisibleList: setVisibleList, setInvisibleList: setInvisibleList, setTrackingList: setTrackingList, setDesignList: setDesignList });
+                    figma.closePlugin();
+                }
+
                 // 메세지 표기
                 if (msg.type === "message") {
                     figma.notify(data.text, {
-                        error: data.error,
+                        error: data.error ?? false,
                     });
                 }
 
@@ -158,7 +230,22 @@ function plannerWidget() {
                 },
                 {
                     itemType: "action",
-                    propertyName: "new",
+                    propertyName: "unComplete",
+                    tooltip: "Un-Complete All",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "export",
+                    tooltip: "Export",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "import",
+                    tooltip: "Import",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "clone",
                     tooltip: "New Widget",
                 },
             ],
@@ -167,6 +254,66 @@ function plannerWidget() {
                     return new Promise((resolve) => {
                         openAddModal();
                     });
+                }
+
+                if (propertyName === "complete") {
+                    setAllPannelCompleteStatus({
+                        status: true,
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                    });
+                }
+
+                if (propertyName === "unComplete") {
+                    setAllPannelCompleteStatus({
+                        status: false,
+                        visibleList: visibleList,
+                        invisibleList: invisibleList,
+                        trackingList: trackingList,
+                        designList: designList,
+                        setVisibleList: setVisibleList,
+                        setInvisibleList: setInvisibleList,
+                        setTrackingList: setTrackingList,
+                        setDesignList: setDesignList,
+                    });
+                }
+
+                if (propertyName === "export") {
+                    return new Promise((resolve) => {
+                        dataExport({ widgetTitle: widgetTitle, visibleList: visibleList, invisibleList: invisibleList, trackingList: trackingList, designList: designList });
+                    });
+                }
+
+                if (propertyName === "import") {
+                    return new Promise((resolve) => {
+                        figma.showUI(__uiFiles__.import, { width: 400, height: 300 });
+                    });
+                }
+
+                if (propertyName === "clone") {
+                    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+                    const parentNode = widgetNode?.parent as BaseNode;
+                    const cloneWidgetNode = widgetNode.cloneWidget({
+                        widgetMode: "list",
+                        widgetTitle: "",
+                        widgetCaption: "",
+                        visibleList: [],
+                        invisibleList: [],
+                        trackingList: [],
+                        designList: [],
+                    });
+                    cloneWidgetNode.x += widgetNode.width;
+                    cloneWidgetNode.x += 100;
+
+                    if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
+                        parentNode.appendChild(cloneWidgetNode);
+                    }
                 }
             }
         );

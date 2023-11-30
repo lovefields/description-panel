@@ -32,7 +32,7 @@ export function getListStructure({ visibleList, invisibleList, trackingList, des
         const designStructure: any = createPannelColList(designList, "design", menuData, setMenuData);
 
         return (
-            <AutoLayout name="content-area" width={"fill-parent"} spacing={20} direction="vertical" overflow="visible">
+            <AutoLayout name="content-area" width={"fill-parent"} spacing={20} padding={{ bottom: 200 }} direction="vertical" overflow="visible">
                 <AutoLayout
                     name="text-box"
                     direction="vertical"
@@ -200,6 +200,23 @@ function createPannel(data: PannelData | ChildPannelData, type: string, isChild:
                                     targetType: type,
                                     targetIdx: data.index,
                                     targetParentIdx: isChild ? (data as ChildPannelData).parentIndex : null,
+                                });
+
+                                return new Promise((resolve) => {
+                                    setTimeout(() => {
+                                        setMenuData({
+                                            active: false,
+                                            x: 0,
+                                            y: 0,
+                                            isChild: false,
+                                            isComplate: false,
+                                            lastCode: "",
+                                            targetType: "",
+                                            targetIdx: -1,
+                                            targetParentIdx: null,
+                                        });
+                                        resolve(true);
+                                    }, 5000);
                                 });
                             } else {
                                 setMenuData({
@@ -464,76 +481,244 @@ export function getMenuStructure({ menuData, setMenuData, visibleList, invisible
             );
         }
 
-        //         // 완료 버튼
-        //         menuList.push(
-        //             <AutoLayout
-        //                 name="btn"
-        //                 width={"fill-parent"}
-        //                 verticalAlignItems="center"
-        //                 height={30}
-        //                 fill={"#fff"}
-        //                 cornerRadius={5}
-        //                 hoverStyle={{
-        //                     fill: "#6436EA",
-        //                 }}
-        //                 onClick={(e) => {
-        //                     data.complete = !data.complete;
-        //                     data.openMenu = false;
-        //                     saveAndArrangementData(widgetData, setWidgetData);
-        //                 }}
-        //                 key={"menu-3"}
-        //             >
-        //                 <Text
-        //                     width={"fill-parent"}
-        //                     fill={"#616161"}
-        //                     fontSize={14}
-        //                     fontWeight={700}
-        //                     lineHeight={"auto"}
-        //                     horizontalAlignText="center"
-        //                     fontFamily={"Noto Sans"}
-        //                     hoverStyle={{
-        //                         fill: "#fff",
-        //                     }}
-        //                 >
-        //                     {data.complete ? "Un-Complete" : "Complete"}
-        //                 </Text>
-        //             </AutoLayout>
-        //         );
+        // 완료 버튼
+        menuList.push(
+            <AutoLayout
+                name="btn"
+                width={"fill-parent"}
+                verticalAlignItems="center"
+                height={30}
+                fill={"#fff"}
+                cornerRadius={5}
+                hoverStyle={{
+                    fill: "#6436EA",
+                }}
+                onClick={(e) => {
+                    return new Promise((resolve) => {
+                        figma.showUI(`
+                            <script>
+                                window.onmessage = (event) => {
+                                    const data = event.data.pluginMessage;
+                                    parent.postMessage({ pluginMessage: { type: "complete", data: data } }, "*");
+                                };
+                            </script>
+                        `);
+                        figma.ui.postMessage({
+                            pannelType: menuData.targetType,
+                            isChild: menuData.isChild,
+                            pannelData: targetData,
+                        });
+                        setMenuData({
+                            active: false,
+                            x: 0,
+                            y: 0,
+                            isChild: false,
+                            isComplate: false,
+                            lastCode: "",
+                            targetType: "",
+                            targetIdx: -1,
+                            targetParentIdx: null,
+                        });
+                    });
+                }}
+                key={3}
+            >
+                <Text
+                    width={"fill-parent"}
+                    fill={"#616161"}
+                    fontSize={14}
+                    fontWeight={700}
+                    lineHeight={"auto"}
+                    horizontalAlignText="center"
+                    fontFamily={"Noto Sans"}
+                    hoverStyle={{
+                        fill: "#fff",
+                    }}
+                >
+                    {
+                        // @ts-ignore: 선언 된 항목임
+                        targetData.complete ? "Un-Complete" : "Complete"
+                    }
+                </Text>
+            </AutoLayout>
+        );
 
-        //         // 삭제 버튼
-        //         menuList.push(
-        //             <AutoLayout
-        //                 name="btn"
-        //                 width={"fill-parent"}
-        //                 verticalAlignItems="center"
-        //                 height={30}
-        //                 fill={"#fff"}
-        //                 cornerRadius={5}
-        //                 hoverStyle={{
-        //                     fill: "#6436EA",
-        //                 }}
-        //                 onClick={(e) => {
-        //                     data.openMenu = false;
-        //                     deleteData(data);
-        //                 }}
-        //                 key={"menu-4"}
-        //             >
-        //                 <Text
-        //                     width={"fill-parent"}
-        //                     fill={"#616161"}
-        //                     fontSize={14}
-        //                     fontWeight={700}
-        //                     lineHeight={"auto"}
-        //                     horizontalAlignText="center"
-        //                     fontFamily={"Noto Sans"}
-        //                     hoverStyle={{
-        //                         fill: "#fff",
-        //                     }}
-        //                 >
-        //                     Delete
-        //                 </Text>
-        //             </AutoLayout>
-        //         );
+        // 순서 이동 (위)
+        menuList.push(
+            <AutoLayout
+                name="btn"
+                width={"fill-parent"}
+                verticalAlignItems="center"
+                height={30}
+                fill={"#fff"}
+                cornerRadius={5}
+                hoverStyle={{
+                    fill: "#6436EA",
+                }}
+                onClick={(e) => {
+                    return new Promise((resolve) => {
+                        figma.showUI(`
+                            <script>
+                                window.onmessage = (event) => {
+                                    const data = event.data.pluginMessage;
+                                    parent.postMessage({ pluginMessage: { type: "listUp", data: data } }, "*");
+                                };
+                            </script>
+                        `);
+                        figma.ui.postMessage({
+                            pannelType: menuData.targetType,
+                            isChild: menuData.isChild,
+                            pannelData: targetData,
+                        });
+                        setMenuData({
+                            active: false,
+                            x: 0,
+                            y: 0,
+                            isChild: false,
+                            isComplate: false,
+                            lastCode: "",
+                            targetType: "",
+                            targetIdx: -1,
+                            targetParentIdx: null,
+                        });
+                    });
+                }}
+                key={4}
+            >
+                <Text
+                    width={"fill-parent"}
+                    fill={"#616161"}
+                    fontSize={14}
+                    fontWeight={700}
+                    lineHeight={"auto"}
+                    horizontalAlignText="center"
+                    fontFamily={"Noto Sans"}
+                    hoverStyle={{
+                        fill: "#fff",
+                    }}
+                >
+                    Move up
+                </Text>
+            </AutoLayout>
+        );
+
+        // 순서 이동 (아래)
+        menuList.push(
+            <AutoLayout
+                name="btn"
+                width={"fill-parent"}
+                verticalAlignItems="center"
+                height={30}
+                fill={"#fff"}
+                cornerRadius={5}
+                hoverStyle={{
+                    fill: "#6436EA",
+                }}
+                onClick={(e) => {
+                    return new Promise((resolve) => {
+                        figma.showUI(`
+                            <script>
+                                window.onmessage = (event) => {
+                                    const data = event.data.pluginMessage;
+                                    parent.postMessage({ pluginMessage: { type: "listDown", data: data } }, "*");
+                                };
+                            </script>
+                        `);
+                        figma.ui.postMessage({
+                            pannelType: menuData.targetType,
+                            isChild: menuData.isChild,
+                            pannelData: targetData,
+                        });
+                        setMenuData({
+                            active: false,
+                            x: 0,
+                            y: 0,
+                            isChild: false,
+                            isComplate: false,
+                            lastCode: "",
+                            targetType: "",
+                            targetIdx: -1,
+                            targetParentIdx: null,
+                        });
+                    });
+                }}
+                key={5}
+            >
+                <Text
+                    width={"fill-parent"}
+                    fill={"#616161"}
+                    fontSize={14}
+                    fontWeight={700}
+                    lineHeight={"auto"}
+                    horizontalAlignText="center"
+                    fontFamily={"Noto Sans"}
+                    hoverStyle={{
+                        fill: "#fff",
+                    }}
+                >
+                    Move Down
+                </Text>
+            </AutoLayout>
+        );
+
+        // 삭제 버튼
+        menuList.push(
+            <AutoLayout
+                name="btn"
+                width={"fill-parent"}
+                verticalAlignItems="center"
+                height={30}
+                fill={"#fff"}
+                cornerRadius={5}
+                hoverStyle={{
+                    fill: "#6436EA",
+                }}
+                onClick={(e) => {
+                    return new Promise((resolve) => {
+                        figma.showUI(`
+                            <script>
+                                window.onmessage = (event) => {
+                                    const data = event.data.pluginMessage;
+                                    parent.postMessage({ pluginMessage: { type: "deletePannel", data: data } }, "*");
+                                };
+                            </script>
+                        `);
+                        figma.ui.postMessage({
+                            pannelType: menuData.targetType,
+                            isChild: menuData.isChild,
+                            pannelData: targetData,
+                        });
+                        setMenuData({
+                            active: false,
+                            x: 0,
+                            y: 0,
+                            isChild: false,
+                            isComplate: false,
+                            lastCode: "",
+                            targetType: "",
+                            targetIdx: -1,
+                            targetParentIdx: null,
+                        });
+                    });
+                }}
+                key={6}
+            >
+                <Text
+                    width={"fill-parent"}
+                    fill={"#616161"}
+                    fontSize={14}
+                    fontWeight={700}
+                    lineHeight={"auto"}
+                    horizontalAlignText="center"
+                    fontFamily={"Noto Sans"}
+                    hoverStyle={{
+                        fill: "#fff",
+                    }}
+                >
+                    Delete
+                </Text>
+            </AutoLayout>
+        );
 
         return (
             <AutoLayout

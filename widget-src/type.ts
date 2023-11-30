@@ -42,6 +42,10 @@ export interface GetPannelStructure extends PannelArgument {
     type: string;
 }
 
+export interface CompletePannelArgument extends PannelArgument {
+    status: boolean;
+}
+
 export interface AddPannelArgument extends PannelArgument {
     data: AddPannelData;
 }
@@ -69,6 +73,23 @@ export interface CreatePinterArgument extends PannelArgument {
         pannelData: PannelData | ChildPannelData;
     };
     widgetId: string;
+}
+
+export interface MovePannelArgument extends PannelArgument {
+    data: {
+        pannelType: string;
+        isChild: boolean;
+        pannelData: PannelData | ChildPannelData;
+    };
+    move: string;
+}
+
+export interface CompletePinterArgument extends PannelArgument {
+    data: {
+        pannelType: string;
+        isChild: boolean;
+        pannelData: PannelData | ChildPannelData;
+    };
 }
 
 export interface EditChildPannelArgument extends PannelArgument {

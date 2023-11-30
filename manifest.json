@@ -10,6 +10,8 @@
         "new": "./ui/new.html",
         "newChild": "./ui/newChild.html",
         "edit": "./ui/edit.html",
-        "view": "./ui/view.html"
+        "view": "./ui/view.html",
+        "import": "./ui/import.html",
+        "export": "./ui/export.html"
     }
 }

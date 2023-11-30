@@ -1,0 +1,121 @@
+<div class="box">
+    <p class="title">Import</p>
+    <textarea class="textarea"></textarea>
+    <div class="btn-area">
+        <button class="btn btn-cancel --cancel">Cancel</button>
+        <button class="btn btn-save">Import</button>
+    </div>
+</div>
+
+<script>
+    window.focus();
+
+    document.querySelector(".btn-cancel").addEventListener("click", () => {
+        parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+    });
+
+    document.addEventListener("keyup", (event) => {
+        if (event.code === "Escape") {
+            parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+        }
+    });
+
+    document.querySelector(".btn-save").addEventListener("click", function () {
+        const data = document.querySelector(".textarea").value;
+
+        try {
+            const jsonData = JSON.parse(data);
+
+            parent.postMessage(
+                {
+                    pluginMessage: {
+                        type: "importData",
+                        data: jsonData,
+                    },
+                },
+                "*"
+            );
+        } catch (error) {
+            parent.postMessage(
+                {
+                    pluginMessage: {
+                        type: "message",
+                        data: {
+                            text: "This is NOT Pannel Data",
+                            error: true,
+                        },
+                    },
+                },
+                "*"
+            );
+        }
+    });
+</script>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+    }
+
+    .box {
+        display: flex;
+        flex-direction: column;
+        row-gap: 20px;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .box .title {
+        margin: 0 0 4px;
+        color: #333;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .box .caption {
+        margin: 0;
+        color: #949494;
+        font-size: 14px;
+    }
+
+    .box .textarea {
+        width: 100%;
+        height: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1c3f9;
+        font-size: 16px;
+        line-height: 1.5;
+        box-sizing: border-box;
+        outline: none;
+        resize: none;
+    }
+
+    .btn-area {
+        display: flex;
+        justify-content: flex-end;
+        column-gap: 10px;
+    }
+
+    .btn-area .btn {
+        flex: 1;
+        height: 35px;
+        background: #6436ea;
+        color: #fff;
+        border: 0;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 35px;
+        cursor: pointer;
+    }
+
+    .btn-area .btn.--cancel {
+        background: #f0ebfd;
+        color: #b29bf5;
+    }
+</style>
