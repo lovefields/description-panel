@@ -187,8 +187,16 @@ function createPannel(data: PannelData | ChildPannelData, type: string, isChild:
 
                             if (openLogic === true) {
                                 const widget = figma.getNodeById(widgetId) as WidgetNode;
-                                const clientX = event.canvasX;
-                                const clientY = event.canvasY;
+                                const parentNode = widget.parent;
+                                let clientX = event.canvasX;
+                                let clientY = event.canvasY;
+
+                                if (parentNode !== null) {
+                                    if (parentNode.type === "SECTION" || parentNode.type === "FRAME") {
+                                        clientX -= parentNode.x;
+                                        clientY -= parentNode.y;
+                                    }
+                                }
 
                                 setMenuData({
                                     active: true,
