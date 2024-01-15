@@ -1,35 +1,26 @@
 import type { PannelData, ChildPannelData, MenuData, LinkItem, PointerData } from "./type";
-import { isEmptyList, openAddModal, openEditModal, openViewModal, openChildAddModal, goToNumber } from "./util";
+import { isEmptyList, openViewModal, goToNumber, openLinkEditModal } from "./util";
 
 const { widget } = figma;
-const { useWidgetNodeId, AutoLayout, Text, Rectangle, SVG } = widget;
+const { useWidgetNodeId, AutoLayout, Text, Rectangle, SVG, Input } = widget;
 
-export function getListStructure({ visibleList, invisibleList, trackingList, designList, menuData, setMenuData }: { visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[]; menuData: MenuData; setMenuData: Function }) {
+export function getListStructure({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, menuData, setMenuData }: { visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[]; setVisibleList: Function; setInvisibleList: Function; setTrackingList: Function; setDesignList: Function; menuData: MenuData; setMenuData: Function }) {
     if (isEmptyList({ visibleList, invisibleList, trackingList, designList }) === true) {
         return (
-            <AutoLayout
-                onClick={(e) => {
-                    return new Promise((resolve) => {
-                        openAddModal();
-                    });
-                }}
-                fill={"#6436EA"}
-                width={"fill-parent"}
-                height={35}
-                horizontalAlignItems={"center"}
-                verticalAlignItems={"center"}
-                cornerRadius={5}
-            >
-                <Text fill={"#fff"} fontSize={14} fontWeight={700} fontFamily={"Inter"}>
-                    Add New Description
+            <AutoLayout direction="vertical" spacing={5} width={"fill-parent"} horizontalAlignItems={"center"} verticalAlignItems={"center"} cornerRadius={5}>
+                <Text fill={"#333"} fontSize={16} fontWeight={700} fontFamily={"Inter"}>
+                    No List
+                </Text>
+                <Text fill={"#333"} fontSize={16} fontWeight={700} fontFamily={"Inter"}>
+                    Add some Description, please.
                 </Text>
             </AutoLayout>
         );
     } else {
-        const visibleStructure: any = createPannelColList(visibleList, "visible", menuData, setMenuData);
-        const invisibleStructure: any = createPannelColList(invisibleList, "invisible", menuData, setMenuData);
-        const trackingStructure: any = createPannelColList(trackingList, "tracking", menuData, setMenuData);
-        const designStructure: any = createPannelColList(designList, "design", menuData, setMenuData);
+        const visibleStructure: any = createPannelColList(visibleList, setVisibleList, "visible", menuData, setMenuData);
+        const invisibleStructure: any = createPannelColList(invisibleList, setInvisibleList, "invisible", menuData, setMenuData);
+        const trackingStructure: any = createPannelColList(trackingList, setTrackingList, "tracking", menuData, setMenuData);
+        const designStructure: any = createPannelColList(designList, setDesignList, "design", menuData, setMenuData);
 
         return (
             <AutoLayout name="content-area" width={"fill-parent"} spacing={20} padding={{ bottom: 200 }} direction="vertical" overflow="visible">
@@ -65,16 +56,16 @@ export function getListStructure({ visibleList, invisibleList, trackingList, des
     }
 }
 
-function createPannelColList(listData: PannelData[], type: string, menuData: MenuData, setMenuData: Function) {
+function createPannelColList(listData: PannelData[], setData: Function, type: string, menuData: MenuData, setMenuData: Function) {
     if (listData.length > 0) {
         const row = listData.map((pannel: PannelData, i: number) => {
             const childList = pannel.childList.map((item) => {
-                return createPannel(item, type, true, menuData, setMenuData);
+                return createPannel(item, type, true, menuData, setMenuData, setData, listData);
             });
 
             return (
                 <AutoLayout name="row" width={"fill-parent"} direction="vertical" spacing={10} key={i} overflow="visible">
-                    {createPannel(pannel, type, false, menuData, setMenuData)}
+                    {createPannel(pannel, type, false, menuData, setMenuData, setData, listData)}
                     {pannel.childList.length > 0 ? (
                         <AutoLayout
                             name="chld-row"
@@ -103,7 +94,7 @@ function createPannelColList(listData: PannelData[], type: string, menuData: Men
     }
 }
 
-function createPannel(data: PannelData | ChildPannelData, type: string, isChild: boolean, menuData: MenuData, setMenuData: Function) {
+function createPannel(data: PannelData | ChildPannelData, type: string, isChild: boolean, menuData: MenuData, setMenuData: Function, setData: Function, listData: PannelData[]) {
     const widgetId = useWidgetNodeId();
     const linkListStructure = getLinkListStructure(data.linkList);
     let bgColor = "";
@@ -260,9 +251,50 @@ function createPannel(data: PannelData | ChildPannelData, type: string, isChild:
                 cornerRadius={5}
                 opacity={data.complete ? 0.3 : 1}
             >
-                <Text name="description" width={"fill-parent"} fill={"#616161"} fontSize={16} lineHeight={"150%"} fontFamily={"Inter"}>
-                    {data.content}
-                </Text>
+                {data.complete ? (
+                    <Text name="description" width={"fill-parent"} fill={"#616161"} fontSize={16} lineHeight={"150%"} fontFamily={"Inter"}>
+                        {decodeURI(data.content)}
+                    </Text>
+                ) : (
+                    <Input
+                        name="description"
+                        width={"fill-parent"}
+                        fill={"#616161"}
+                        fontSize={16}
+                        lineHeight={"150%"}
+                        fontFamily={"Inter"}
+                        value={decodeURI(data.content)}
+                        placeholder="Write Description"
+                        onTextEditEnd={(e) => {
+                            const textData = e.characters.replaceAll("\n", "\u2028");
+
+                            if (isChild === true) {
+                                listData[(data as ChildPannelData).parentIndex].childList[data.index].content = textData;
+                            } else {
+                                listData[data.index].content = textData;
+                            }
+
+                            data.pointerList.forEach((nodeId) => {
+                                const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+                                if (widgetNode !== null) {
+                                    let defaultData = {
+                                        ...(widgetNode.widgetSyncedState["pointerData"] as PointerData),
+                                        content: textData,
+                                    };
+
+                                    widgetNode.setWidgetSyncedState({
+                                        widgetMode: "pointer",
+                                        pointerData: defaultData,
+                                        arrowType: widgetNode.widgetSyncedState["arrowType"],
+                                    });
+                                }
+                            });
+
+                            setData(listData);
+                        }}
+                    ></Input>
+                )}
             </AutoLayout>
 
             {linkListStructure}
@@ -348,7 +380,7 @@ export function getMenuStructure({ menuData, setMenuData, visibleList, invisible
                 }}
                 onClick={() => {
                     return new Promise((resolve) => {
-                        openEditModal(menuData.targetType, menuData.isChild, targetData);
+                        openLinkEditModal(menuData.targetType, menuData.isChild, targetData);
                         setMenuData({
                             active: false,
                             x: 0,
@@ -376,7 +408,7 @@ export function getMenuStructure({ menuData, setMenuData, visibleList, invisible
                         fill: "#fff",
                     }}
                 >
-                    Eidt
+                    Link Eidt
                 </Text>
             </AutoLayout>
         );
@@ -455,7 +487,18 @@ export function getMenuStructure({ menuData, setMenuData, visibleList, invisible
                     }}
                     onClick={() => {
                         return new Promise((resolve) => {
-                            openChildAddModal(menuData.targetType, targetData as PannelData);
+                            figma.showUI(`
+                                <script>
+                                    window.onmessage = (event) => {
+                                        const data = event.data.pluginMessage;
+                                        parent.postMessage({ pluginMessage: { type: "addChildPannel", data: data } }, "*");
+                                    };
+                                </script>
+                            `);
+                            figma.ui.postMessage({
+                                pannelType: menuData.targetType,
+                                pannelData: targetData as PannelData,
+                            });
                             setMenuData({
                                 active: false,
                                 x: 0,

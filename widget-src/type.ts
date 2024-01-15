@@ -46,23 +46,21 @@ export interface CompletePannelArgument extends PannelArgument {
     status: boolean;
 }
 
-export interface AddPannelArgument extends PannelArgument {
-    data: AddPannelData;
-}
-
 export interface AddChildPannelArgument extends PannelArgument {
-    data: {
-        content: string;
-        linkList: LinkItem[];
-        pannelType: string;
-        parentIndex: number;
-    };
-}
-
-export interface EditPannelArgument extends PannelArgument {
     data: {
         pannelType: string;
         pannelData: PannelData;
+    };
+}
+
+export interface EditLinkArgument extends PannelArgument {
+    data: {
+        pannelData: {
+            type: string;
+            isChild: boolean;
+            data: PannelData | ChildPannelData;
+        };
+        linkList: LinkItem[];
     };
 }
 
@@ -89,13 +87,6 @@ export interface CompletePinterArgument extends PannelArgument {
         pannelType: string;
         isChild: boolean;
         pannelData: PannelData | ChildPannelData;
-    };
-}
-
-export interface EditChildPannelArgument extends PannelArgument {
-    data: {
-        pannelType: string;
-        pannelData: ChildPannelData;
     };
 }
 

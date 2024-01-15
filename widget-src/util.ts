@@ -1,4 +1,4 @@
-import type { PannelData, AddPannelArgument, ChildPannelData, EditPannelArgument, CreatePinterArgument, LinkItem, PointerData, AddChildPannelArgument, GetPannelStructure, EditChildPannelArgument, CompletePinterArgument, CompletePannelArgument, MovePannelArgument } from "./type";
+import type { PannelData, ChildPannelData, CreatePinterArgument, LinkItem, PointerData, AddChildPannelArgument, GetPannelStructure, CompletePinterArgument, CompletePannelArgument, MovePannelArgument, EditLinkArgument } from "./type";
 
 export function setPanelCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -95,23 +95,9 @@ export function isEmptyList({ visibleList, invisibleList, trackingList, designLi
     return isEmpty;
 }
 
-// 기본 패널 추가 모달
-export function openAddModal() {
-    figma.showUI(__uiFiles__.new, { width: 900, height: 600 });
-}
-
-// 자식 패널 추가 모달
-export function openChildAddModal(type: string, data: PannelData) {
-    figma.showUI(__uiFiles__.newChild, { width: 900, height: 600 });
-    figma.ui.postMessage({
-        type: type,
-        data: data,
-    });
-}
-
-// 패널 수정 모달
-export function openEditModal(type: string, isChild: boolean, data: PannelData | ChildPannelData) {
-    figma.showUI(__uiFiles__.edit, { width: 900, height: 600 });
+// 링크 수정 모달
+export function openLinkEditModal(type: string, isChild: boolean, data: PannelData | ChildPannelData) {
+    figma.showUI(__uiFiles__.link, { width: 450, height: 600 });
     figma.ui.postMessage({
         type: type,
         isChild: isChild,
@@ -136,116 +122,19 @@ export function openViewModal(viewNumber: string, pannelType: string, content: s
     });
 }
 
-// 기본 패널 정보 추가 함수
-export function addPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: AddPannelArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
-
-    targetFunction(
-        targetValue.concat([
-            {
-                index: targetValue.length,
-                code: setPanelCode(),
-                complete: false,
-                linkList: data.linkList,
-                content: data.content,
-                pointerList: [],
-                childList: [],
-            },
-        ])
-    );
-}
-
-// 기본 패널 정보 수정 함수
-export function editPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: EditPannelArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
-
-    if (data.pannelData.pointerList.length > 0) {
-        const nullList: string[] = [];
-
-        data.pannelData.pointerList.forEach((nodeId: string) => {
-            const target = figma.getNodeById(nodeId) as WidgetNode | null;
-
-            if (target === null) {
-                nullList.push(nodeId);
-            } else {
-                let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
-
-                defaultData.content = data.pannelData.content;
-                defaultData.linkList = data.pannelData.linkList;
-
-                target.setWidgetSyncedState({
-                    widgetMode: "pointer",
-                    pointerData: defaultData,
-                    arrowType: target.widgetSyncedState["arrowType"],
-                });
-            }
-        });
-
-        nullList.forEach((nodeId) => {
-            const idx = data.pannelData.pointerList.indexOf(nodeId);
-
-            if (idx !== -1) {
-                data.pannelData.pointerList.splice(idx, 1);
-            }
-        });
-    }
-
-    targetValue[data.pannelData.index] = data.pannelData;
-    targetFunction(targetValue);
-}
-
-// 자식 패널 정보 수정 함수
-export function editChildPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: EditChildPannelArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
-
-    if (targetValue[data.pannelData.parentIndex].childList[data.pannelData.index].pointerList.length > 0) {
-        const nullList: string[] = [];
-
-        targetValue[data.pannelData.parentIndex].childList[data.pannelData.index].pointerList.forEach((nodeId: string) => {
-            const target = figma.getNodeById(nodeId) as WidgetNode | null;
-
-            if (target === null) {
-                nullList.push(nodeId);
-            } else {
-                let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
-
-                defaultData.content = data.pannelData.content;
-                defaultData.linkList = data.pannelData.linkList;
-
-                target.setWidgetSyncedState({
-                    widgetMode: "pointer",
-                    pointerData: defaultData,
-                    arrowType: target.widgetSyncedState["arrowType"],
-                });
-            }
-        });
-
-        nullList.forEach((nodeId) => {
-            const idx = targetValue[data.pannelData.parentIndex].childList[data.pannelData.index].pointerList.indexOf(nodeId);
-
-            if (idx !== -1) {
-                targetValue[data.pannelData.parentIndex].childList[data.pannelData.index].pointerList.splice(idx, 1);
-            }
-        });
-    }
-
-    targetValue[data.pannelData.parentIndex].childList[data.pannelData.index] = data.pannelData;
-    targetFunction(targetValue);
-}
-
 // 자식 패널 정보 추가 함수
 export function addChildPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: AddChildPannelArgument) {
     let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
 
-    targetValue[data.parentIndex].childList.push({
+    targetValue[data.pannelData.index].childList.push({
         code: setPanelCode(),
-        index: targetValue[data.parentIndex].childList.length,
+        index: targetValue[data.pannelData.index].childList.length,
         complete: false,
-        content: data.content,
-        linkList: data.linkList,
+        content: "",
+        linkList: [],
         pointerList: [],
-        parentIndex: data.parentIndex,
-        parentCode: targetValue[data.parentIndex].code,
+        parentIndex: data.pannelData.index,
+        parentCode: data.pannelData.code,
     });
     targetFunction(targetValue);
 }
@@ -518,6 +407,47 @@ export function deletePannelItem({ visibleList, invisibleList, trackingList, des
         }
     });
 
+    targetValue.forEach((row, i) => {
+        row.index = i;
+        row.pointerList.forEach((nodeId: string) => {
+            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (widgetNode !== null) {
+                widgetNode.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: {
+                        ...widgetNode.widgetSyncedState["pointerData"],
+                        index: i,
+                        viewText: i + 1,
+                    },
+                    arrowType: widgetNode.widgetSyncedState["arrowType"],
+                });
+            }
+        });
+
+        row.childList.forEach((child, j) => {
+            child.index = j;
+            child.parentIndex = i;
+
+            child.pointerList.forEach((nodeId: string) => {
+                const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+                if (widgetNode !== null) {
+                    widgetNode.setWidgetSyncedState({
+                        widgetMode: "pointer",
+                        pointerData: {
+                            ...widgetNode.widgetSyncedState["pointerData"],
+                            index: j,
+                            parentIndex: i,
+                            viewText: `${i + 1}-${j + 1}`,
+                        },
+                        arrowType: widgetNode.widgetSyncedState["arrowType"],
+                    });
+                }
+            });
+        });
+    });
+
     targetFunction(targetValue);
 }
 
@@ -582,4 +512,68 @@ export function setImportData({ data, setVisibleList, setInvisibleList, setTrack
     if (data.designList !== undefined) {
         setDesignList(data.designList);
     }
+}
+
+// 새 데이터 넣기
+export function addNewData({ type, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList }: { type: string; visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[]; setVisibleList: Function; setInvisibleList: Function; setTrackingList: Function; setDesignList: Function }) {
+    const { targetFunction, targetValue } = getTargetValueAndFunction({ type, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+
+    targetFunction(
+        targetValue.concat([
+            {
+                index: targetValue.length,
+                code: setPanelCode(),
+                complete: false,
+                linkList: [],
+                content: "",
+                pointerList: [],
+                childList: [],
+            },
+        ])
+    );
+}
+
+// 링크정보 할당
+export function setLinkData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: EditLinkArgument) {
+    const { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelData.type, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+
+    if (data.pannelData.isChild === true) {
+        targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
+
+        targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
+            const target = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (target !== null) {
+                let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
+
+                defaultData.linkList = data.linkList;
+
+                target.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: defaultData,
+                    arrowType: target.widgetSyncedState["arrowType"],
+                });
+            }
+        });
+    } else {
+        targetValue[data.pannelData.data.index].linkList = data.linkList;
+
+        targetValue[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
+            const target = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (target !== null) {
+                let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
+
+                defaultData.linkList = data.linkList;
+
+                target.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: defaultData,
+                    arrowType: target.widgetSyncedState["arrowType"],
+                });
+            }
+        });
+    }
+
+    targetFunction(targetValue);
 }

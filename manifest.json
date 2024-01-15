@@ -12,6 +12,7 @@
         "edit": "./ui/edit.html",
         "view": "./ui/view.html",
         "import": "./ui/import.html",
-        "export": "./ui/export.html"
+        "export": "./ui/export.html",
+        "link": "./ui/link.html"
     }
 }

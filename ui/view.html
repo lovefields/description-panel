@@ -37,7 +37,7 @@
         document.querySelector(".top-info-area").classList.add(`--${viewData.pannelType}`);
         document.querySelector(".top-info-area .number").textContent = viewData.viewNumber;
         document.querySelector(".top-info-area .type").textContent = viewData.pannelType.capitalize();
-        document.querySelector(".description-area").innerHTML = viewData.content.replace(/\n/g, "<br>");
+        document.querySelector(".description-area").innerHTML = viewData.content.replaceAll("\u2028", "<br>").replaceAll("\u2029", "<br>").replaceAll(/\n/g, "<br>");
 
         if (viewData.linkList.length === 0) {
             document.querySelector(".box").classList.add("--single");

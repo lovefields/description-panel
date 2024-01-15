@@ -1,5 +1,5 @@
 import type { PannelData, MenuData, PointerData } from "./type";
-import { getLayoutSize, addPannelData, openAddModal, editPannelData, createPinter, openViewModal, addChildPannelData, editChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, dataExport,setImportData } from "./util";
+import { getLayoutSize, addNewData, createPinter, openViewModal, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, dataExport, setImportData, setLinkData } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -11,6 +11,7 @@ function plannerWidget() {
     let structure;
 
     if (widgetMode === "list") {
+        const [descriptionType] = useSyncedState<string>("descriptionType", "");
         const [widgetTitle, setWidgetTitle] = useSyncedState<string>("widgetTitle", "");
         const [widgetCaption, setWidgetCaption] = useSyncedState<string>("widgetCaption", "");
         const [visibleList, setVisibleList] = useSyncedState<PannelData[]>("visibleList", []);
@@ -49,9 +50,9 @@ function plannerWidget() {
             figma.ui.onmessage = (msg) => {
                 const data = msg.data;
 
-                // 기본 패널 추가
-                if (msg.type === "addPannel") {
-                    addPannelData({
+                // 링크 정보 수정
+                if (msg.type === "editLink") {
+                    setLinkData({
                         visibleList: visibleList,
                         invisibleList: invisibleList,
                         trackingList: trackingList,
@@ -81,38 +82,6 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
-                // 패널 정보 수정
-                if (msg.type === "editPannel") {
-                    editPannelData({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                    });
-                    figma.closePlugin();
-                }
-
-                // 자식 패널 정보 수정
-                if (msg.type === "editChildPannel") {
-                    editChildPannelData({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                    });
-                    figma.closePlugin();
-                }
-
                 // 포인터 생성
                 if (msg.type === "createPointer") {
                     createPinter({
@@ -127,7 +96,6 @@ function plannerWidget() {
                         data: data,
                         widgetId: widgetId,
                     });
-                    console.log(data);
                     figma.closePlugin();
                 }
 
@@ -219,9 +187,17 @@ function plannerWidget() {
         usePropertyMenu(
             [
                 {
-                    itemType: "action",
+                    itemType: "dropdown",
                     propertyName: "add",
                     tooltip: "Add New Description",
+                    selectedOption: descriptionType,
+                    options: [
+                        { option: "", label: "Add New" },
+                        { option: "visible", label: "Visible" },
+                        { option: "invisible", label: "Invisible" },
+                        { option: "tracking", label: "Tracking" },
+                        { option: "design", label: "Design" },
+                    ],
                 },
                 {
                     itemType: "action",
@@ -251,9 +227,19 @@ function plannerWidget() {
             ],
             ({ propertyName, propertyValue }) => {
                 if (propertyName === "add") {
-                    return new Promise((resolve) => {
-                        openAddModal();
-                    });
+                    if (propertyValue !== undefined && propertyValue !== "") {
+                        addNewData({
+                            type: propertyValue,
+                            visibleList: visibleList,
+                            invisibleList: invisibleList,
+                            trackingList: trackingList,
+                            designList: designList,
+                            setVisibleList: setVisibleList,
+                            setInvisibleList: setInvisibleList,
+                            setTrackingList: setTrackingList,
+                            setDesignList: setDesignList,
+                        });
+                    }
                 }
 
                 if (propertyName === "complete") {
@@ -380,6 +366,10 @@ function plannerWidget() {
                     invisibleList: invisibleList,
                     trackingList: trackingList,
                     designList: designList,
+                    setVisibleList: setVisibleList,
+                    setInvisibleList: setInvisibleList,
+                    setTrackingList: setTrackingList,
+                    setDesignList: setDesignList,
                     menuData: menuData,
                     setMenuData: setMenuData,
                 })}
@@ -412,9 +402,17 @@ function plannerWidget() {
                     tooltip: "View info",
                 },
                 {
-                    itemType: "action",
+                    itemType: "dropdown",
                     propertyName: "arrow",
-                    tooltip: `Arrow : ${arrowType}`,
+                    tooltip: "Arrow Setting",
+                    selectedOption: arrowType,
+                    options: [
+                        { option: "none", label: "Arrow : None" },
+                        { option: "top", label: "Arrow : top" },
+                        { option: "right", label: "Arrow : right" },
+                        { option: "bottom", label: "Arrow : bottom" },
+                        { option: "left", label: "Arrow : left" },
+                    ],
                 },
             ],
             ({ propertyName, propertyValue }) => {
@@ -425,22 +423,8 @@ function plannerWidget() {
                 }
 
                 if (propertyName === "arrow") {
-                    switch (arrowType) {
-                        case "none":
-                            setArrowType("top");
-                            break;
-                        case "top":
-                            setArrowType("right");
-                            break;
-                        case "right":
-                            setArrowType("bottom");
-                            break;
-                        case "bottom":
-                            setArrowType("left");
-                            break;
-                        case "left":
-                            setArrowType("none");
-                            break;
+                    if (propertyValue !== undefined) {
+                        setArrowType(propertyValue);
                     }
                 }
             }
