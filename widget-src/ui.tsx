@@ -253,7 +253,7 @@ function createPannel(data: PannelData | ChildPannelData, type: string, isChild:
             >
                 {data.complete ? (
                     <Text name="description" width={"fill-parent"} fill={"#616161"} fontSize={16} lineHeight={"150%"} fontFamily={"Inter"}>
-                        {decodeURI(data.content)}
+                        {data.content}
                     </Text>
                 ) : (
                     <Input
@@ -263,7 +263,7 @@ function createPannel(data: PannelData | ChildPannelData, type: string, isChild:
                         fontSize={16}
                         lineHeight={"150%"}
                         fontFamily={"Inter"}
-                        value={decodeURI(data.content)}
+                        value={data.content}
                         placeholder="Write Description"
                         onTextEditEnd={(e) => {
                             const textData = e.characters.replaceAll("\n", "\u2028");
