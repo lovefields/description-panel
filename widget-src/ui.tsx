@@ -1,5 +1,5 @@
 import type { PannelData, ChildPannelData, MenuData, LinkItem, PointerData } from "./type";
-import { isEmptyList, openViewModal, goToNumber, openLinkEditModal } from "./util";
+import { isEmptyList, openViewModal, goToNumber, openLinkEditModal, getMenuPosition } from "./util";
 
 const { widget } = figma;
 const { useWidgetNodeId, AutoLayout, Text, Rectangle, SVG, Input } = widget;
@@ -178,21 +178,12 @@ function createPannel(data: PannelData | ChildPannelData, type: string, isChild:
 
                             if (openLogic === true) {
                                 const widget = figma.getNodeById(widgetId) as WidgetNode;
-                                const parentNode = widget.parent;
-                                let clientX = event.canvasX;
-                                let clientY = event.canvasY;
-
-                                if (parentNode !== null) {
-                                    if (parentNode.type === "SECTION" || parentNode.type === "FRAME") {
-                                        clientX -= parentNode.x;
-                                        clientY -= parentNode.y;
-                                    }
-                                }
+                                const { x: clientX, y: clientY } = getMenuPosition(widget, event);
 
                                 setMenuData({
                                     active: true,
-                                    x: clientX - widget.x - 167,
-                                    y: clientY - widget.y + 10,
+                                    x: clientX,
+                                    y: clientY,
                                     isChild: isChild,
                                     isComplate: data.complete,
                                     lastCode: data.code,

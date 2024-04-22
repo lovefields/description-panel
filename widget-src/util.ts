@@ -577,3 +577,47 @@ export function setLinkData({ visibleList, invisibleList, trackingList, designLi
 
     targetFunction(targetValue);
 }
+
+// 뎁스에 의한 메뉴 위치 연산
+export function getMenuPosition(widget: WidgetNode, event: WidgetClickEvent) {
+    const parentNode = widget.parent;
+    let x = 0;
+    let y = 0;
+
+    if (parentNode !== null && parentNode.type !== "PAGE") {
+        const { nodeX, nodeY } = getParentPosition(parentNode);
+
+        x = Math.floor(event.canvasX) - nodeX - Math.floor(widget.x) - 167;
+        y = Math.floor(event.canvasY) - nodeY - Math.floor(widget.y) + 10;
+    } else {
+        x = Math.floor(event.canvasX) - Math.floor(widget.x) - 167;
+        y = Math.floor(event.canvasY) - Math.floor(widget.y) + 10;
+    }
+
+    return {
+        x: x,
+        y: y,
+    };
+}
+
+function getParentPosition(node: BaseNode, x: number = 0, y: number = 0) {
+    if (node.parent !== null && node.type !== "PAGE") {
+        if (node.type === "SECTION" || node.type === "FRAME") {
+            return getParentPosition(node.parent, Math.floor(node.x + x), Math.floor(node.y + y));
+        } else {
+            return getParentPosition(node.parent, x, y);
+        }
+    } else {
+        if (node.type === "SECTION" || node.type === "FRAME") {
+            return {
+                nodeX: Math.floor(node.x) + x,
+                nodeY: Math.floor(node.y) + y,
+            };
+        } else {
+            return {
+                nodeX: 0 + x,
+                nodeY: 0 + y,
+            };
+        }
+    }
+}

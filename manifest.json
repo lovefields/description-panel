@@ -14,5 +14,9 @@
         "import": "./ui/import.html",
         "export": "./ui/export.html",
         "link": "./ui/link.html"
+    },
+    "documentAccess": "dynamic-page",
+    "networkAccess": {
+        "allowedDomains": ["none"]
     }
 }
