@@ -15,7 +15,7 @@
         "export": "./ui/export.html",
         "link": "./ui/link.html"
     },
-    "documentAccess": "dynamic-page",
+    "documentAccess": "none",
     "networkAccess": {
         "allowedDomains": ["none"]
     }
