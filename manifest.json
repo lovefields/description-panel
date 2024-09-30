@@ -13,9 +13,11 @@
         "view": "./ui/view.html",
         "import": "./ui/import.html",
         "export": "./ui/export.html",
-        "link": "./ui/link.html"
+        "link": "./ui/link.html",
+        "setting": "./ui/setting.html"
     },
     "documentAccess": "none",
+    "permissions": ["activeusers", "payments"],
     "networkAccess": {
         "allowedDomains": ["none"]
     }

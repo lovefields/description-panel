@@ -1,0 +1,347 @@
+<div class="box">
+    <div class="row title-area">
+        <p class="title">Setting</p>
+        <p class="caption">Set Font size and Your Panel kind</p>
+    </div>
+
+    <div class="row font-size">
+        <p class="label">font size</p>
+        <input type="number" min="12" max="30" class="input input-font-size" />
+    </div>
+
+    <div class="row link-list"></div>
+
+    <div class="row btn-area">
+        <button class="btn btn-cancel --cancel">Cancel</button>
+        <button class="btn btn-save">Save</button>
+    </div>
+</div>
+
+<script>
+    window.focus();
+    const $btnCancel = document.querySelector(".btn-cancel");
+    const $btnSave = document.querySelector(".btn-save");
+    const $linkList = document.querySelector(".link-list");
+
+    let fontSize = 0;
+    let panelList = [];
+
+    // 창 닫기
+    $btnCancel.addEventListener("click", () => {
+        parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+    });
+
+    // 저장
+    $btnSave.addEventListener("click", () => {
+        updateData();
+        const hasNoneText = panelList.filter((item) => item.name === "").length > 0;
+
+        if (fontSize > 30) {
+            fontSize = 30;
+        }
+
+        if (fontSize < 12) {
+            fontSize = 12;
+        }
+
+        if (hasNoneText === true) {
+            parent.postMessage(
+                {
+                    pluginMessage: {
+                        type: "message",
+                        data: {
+                            error: true,
+                            text: "You must be write all input field with right value.",
+                        },
+                    },
+                },
+                "*"
+            );
+        } else {
+            parent.postMessage(
+                {
+                    pluginMessage: {
+                        type: "setSetting",
+                        data: {
+                            fontSize: fontSize,
+                            panelList: panelList,
+                        },
+                    },
+                },
+                "*"
+            );
+        }
+    });
+
+    // 화면 그리기
+    function drow() {
+        const $fontSize = document.querySelector(".input-font-size");
+        let listStructure = "";
+
+        panelList.forEach((item, i) => {
+            let numberText = String(i + 1);
+
+            if (numberText.length === 1) {
+                numberText = "0" + numberText;
+            }
+
+            listStructure += `<div class="wrap" data-code="${item.code}">`;
+            listStructure += `<div class="row number-area">`;
+            listStructure += `<p class="number">${numberText}</p>`;
+            listStructure += `<button class="btn-delete" data-idx="${i}"><svg width="20" height="20" viewBox="0 0 20 20" class="icon" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="15.9375" y="9.375" width="1.25" height="11.875" rx="0.625" transform="rotate(90 15.9375 9.375)" fill="#7A7A7A"/></svg></button>`;
+            listStructure += `</div>`;
+            listStructure += `<div class="row input-area">`;
+            listStructure += `<p class="label">Name</p>`;
+            listStructure += `<input type="text" class="input input-name" value="${item.name}">`;
+            listStructure += `</div>`;
+            listStructure += `<div class="row input-area">`;
+            listStructure += `<p class="label">bg-color</p>`;
+            listStructure += `<input type="color" class="input --color input-bgcolor" value="${item.bgColor}">`;
+            listStructure += `</div>`;
+            listStructure += `<div class="row input-area">`;
+            listStructure += `<p class="label">text-color</p>`;
+            listStructure += `<input type="color" class="input --color input-textcolor" value="${item.textColor}">`;
+            listStructure += `</div>`;
+            listStructure += `</div>`;
+        });
+
+        listStructure += `<div class="btn-add-area">`;
+        listStructure += `<button class="btn-add"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.25 5.625C11.25 5.21079 11.5858 4.875 12 4.875C12.4142 4.875 12.75 5.21079 12.75 5.625V12V18.375C12.75 18.7892 12.4142 19.125 12 19.125C11.5858 19.125 11.25 18.7892 11.25 18.375V5.625Z" fill="white"/><path d="M18.375 11.25C18.7892 11.25 19.125 11.5858 19.125 12C19.125 12.4142 18.7892 12.75 18.375 12.75L5.625 12.75C5.21079 12.75 4.875 12.4142 4.875 12C4.875 11.5858 5.21079 11.25 5.625 11.25L18.375 11.25Z" fill="white"/></svg></button>`;
+        listStructure += `</div>`;
+
+        $fontSize.value = fontSize;
+        $linkList.innerHTML = listStructure;
+    }
+
+    // 링크 리스트 내부 이벤트
+    $linkList.addEventListener("click", function (e) {
+        const $btnDelete = e.target.closest(".btn-delete");
+        const $btnAdd = e.target.closest(".btn-add");
+
+        if ($btnDelete !== null) {
+            const idx = parseInt($btnDelete.dataset["idx"]);
+
+            panelList.splice(idx, 1);
+            drow();
+        }
+
+        if ($btnAdd !== null) {
+            panelList.push({
+                name: "",
+                code: getCode(),
+                bgColor: "#ffffff",
+                textColor: "#333333",
+            });
+
+            drow();
+        }
+    });
+
+    function getCode() {
+        const chars = "abcdefghijklmnopqrstuvwxyz";
+        let str = "";
+
+        for (let i = 0; i < 8; i += 1) {
+            str += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        return str;
+    }
+
+    function updateData() {
+        const $fontSize = document.querySelector(".input-font-size");
+        const wrapList = $linkList.querySelectorAll(".wrap");
+        let data = [];
+
+        wrapList.forEach((item) => {
+            const name = item.querySelector(".input-name").value;
+            const bgColor = item.querySelector(".input-bgcolor").value;
+            const textColor = item.querySelector(".input-textcolor").value;
+
+            data.push({
+                name: name,
+                code: item.dataset["code"],
+                bgColor: bgColor,
+                textColor: textColor,
+            });
+        });
+
+        fontSize = parseInt($fontSize.value);
+        panelList = data;
+    }
+
+    window.onmessage = (event) => {
+        const data = event.data.pluginMessage;
+
+        fontSize = data.fontSize;
+        panelList = data.panelList;
+
+        drow();
+    };
+</script>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    .box {
+        display: flex;
+        flex-direction: column;
+        row-gap: 20px;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .box .input {
+        flex: 1;
+        height: 40px;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 8px 12px;
+        box-sizing: border-box;
+    }
+
+    .title-area .title {
+        margin: 0 0 4px;
+        color: #333;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .title-area .caption {
+        margin: 0;
+        color: #949494;
+        font-size: 14px;
+    }
+
+    .font-size {
+        display: flex;
+        align-items: center;
+        column-gap: 8px;
+        padding: 12px 12px 16px;
+        background: #fafafa;
+        border-radius: 8px;
+    }
+
+    .font-size .label {
+        color: #616161;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .link-list {
+        display: flex;
+        flex-direction: column;
+        row-gap: 20px;
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .link-list .wrap {
+        display: flex;
+        flex-direction: column;
+        row-gap: 10px;
+        padding: 12px 12px 16px;
+        background: #fafafa;
+        border-radius: 8px;
+    }
+
+    .link-list .number-area {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .link-list .number-area .number {
+        color: #616161;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .link-list .number-area .btn-delete {
+        width: 24px;
+        height: 24px;
+        margin: 0;
+        padding: 0;
+        background: #f1f1f1;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .link-list .number-area .btn-delete .icon {
+        width: 100%;
+        height: 100%;
+    }
+
+    .link-list .input-area {
+        display: flex;
+        align-items: center;
+        column-gap: 10px;
+    }
+
+    .link-list .input-area .label {
+        width: 65px;
+        color: #949494;
+        font-size: 14px;
+    }
+
+    .link-list .input-area .input.--color {
+        flex: none;
+        width: 40px;
+        padding: 4px;
+    }
+
+    .link-list .btn-add-area {
+        display: flex;
+        justify-content: center;
+    }
+
+    .link-list .btn-add-area .btn-add {
+        width: 28px;
+        height: 28px;
+        margin: 0;
+        padding: 0;
+        background: #6436ea;
+        border: 0;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-area {
+        display: flex;
+        justify-content: flex-end;
+        column-gap: 10px;
+        flex: 1;
+        max-height: 35px;
+    }
+
+    .btn-area .btn {
+        width: 250px;
+        height: 35px;
+        background: #6436ea;
+        color: #fff;
+        border: 0;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        line-height: 35px;
+        cursor: pointer;
+    }
+
+    .btn-area .btn.--cancel {
+        background: #f0ebfd;
+        color: #b29bf5;
+    }
+</style>

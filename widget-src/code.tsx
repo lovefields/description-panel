@@ -1,5 +1,5 @@
-import type { PannelData, MenuData, PointerData } from "./type";
-import { getLayoutSize, addNewData, createPinter, openViewModal, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, dataExport, setImportData, setLinkData } from "./util";
+import "./type.d.ts";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -14,10 +14,37 @@ function plannerWidget() {
         const [descriptionType] = useSyncedState<string>("descriptionType", "");
         const [widgetTitle, setWidgetTitle] = useSyncedState<string>("widgetTitle", "");
         const [widgetCaption, setWidgetCaption] = useSyncedState<string>("widgetCaption", "");
-        const [visibleList, setVisibleList] = useSyncedState<PannelData[]>("visibleList", []);
-        const [invisibleList, setInvisibleList] = useSyncedState<PannelData[]>("invisibleList", []);
-        const [trackingList, setTrackingList] = useSyncedState<PannelData[]>("trackingList", []);
-        const [designList, setDesignList] = useSyncedState<PannelData[]>("designList", []);
+        const [widgetOption, setWidgetOption] = useSyncedState<WidgetOption>("widgetOption", {
+            fontSize: 14,
+            isChanged: false,
+            panelList: [
+                {
+                    name: "Visible",
+                    code: "a",
+                    bgColor: "#f0ebfd",
+                    textColor: "#6436ea",
+                },
+                {
+                    name: "Invisible",
+                    code: "b",
+                    bgColor: "#ffefea",
+                    textColor: "#f66134",
+                },
+                {
+                    name: "Tracking",
+                    code: "c",
+                    bgColor: "#ecf7ff",
+                    textColor: "#47b6fe",
+                },
+                {
+                    name: "Design",
+                    code: "d",
+                    bgColor: "#e9faef",
+                    textColor: "#38c66b",
+                },
+            ],
+        });
+        const [widgetData, setWidgetData] = useSyncedState<WidgetData>("widgetData", {});
         const [menuData, setMenuData] = useSyncedState<MenuData>("menuData", {
             active: false,
             x: 0,
@@ -29,147 +56,149 @@ function plannerWidget() {
             targetIdx: -1,
             targetParentIdx: null,
         });
-
         const widgetId: string = useWidgetNodeId();
-        const widgetWidth = getLayoutSize({
-            visibleList: visibleList,
-            invisibleList: invisibleList,
-            trackingList: trackingList,
-            designList: designList,
-        });
+        const widgetWidth = getLayoutSize(widgetData, widgetOption);
         const menuStructure = getMenuStructure({
             menuData: menuData,
             setMenuData: setMenuData,
-            visibleList: visibleList,
-            invisibleList: invisibleList,
-            trackingList: trackingList,
-            designList: designList,
+            widgetData: widgetData,
+            widgetOption: widgetOption,
         });
 
         useEffect(() => {
+            figma.payments?.setPaymentStatusInDevelopment({ type: "PAID" });
+            // figma.payments?.setPaymentStatusInDevelopment({ type: "UNPAID" });
+            console.log("test", figma.payments?.status.type);
+
             figma.ui.onmessage = (msg) => {
                 const data = msg.data;
+
+                // 설정 수정
+                if (msg.type === "setSetting") {
+                    setWidgetOption({
+                        fontSize: data.fontSize,
+                        isChanged: true,
+                        panelList: data.panelList,
+                    });
+                    // TODO : 모든 포인터 업데이트
+                    figma.closePlugin();
+                }
 
                 // 링크 정보 수정
                 if (msg.type === "editLink") {
                     setLinkData({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        widgetOption: widgetOption,
                         data: data,
                     });
                     figma.closePlugin();
                 }
 
-                // 자식 패널 추가
-                if (msg.type === "addChildPannel") {
-                    addChildPannelData({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                    });
-                    figma.closePlugin();
-                }
+                //     // 자식 패널 추가
+                //     if (msg.type === "addChildPannel") {
+                //         addChildPannelData({
+                //             visibleList: visibleList,
+                //             invisibleList: invisibleList,
+                //             trackingList: trackingList,
+                //             designList: designList,
+                //             setVisibleList: setVisibleList,
+                //             setInvisibleList: setInvisibleList,
+                //             setTrackingList: setTrackingList,
+                //             setDesignList: setDesignList,
+                //             data: data,
+                //         });
+                //         figma.closePlugin();
+                //     }
 
-                // 포인터 생성
-                if (msg.type === "createPointer") {
-                    createPinter({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                        widgetId: widgetId,
-                    });
-                    figma.closePlugin();
-                }
+                //     // 포인터 생성
+                //     if (msg.type === "createPointer") {
+                //         createPinter({
+                //             visibleList: visibleList,
+                //             invisibleList: invisibleList,
+                //             trackingList: trackingList,
+                //             designList: designList,
+                //             setVisibleList: setVisibleList,
+                //             setInvisibleList: setInvisibleList,
+                //             setTrackingList: setTrackingList,
+                //             setDesignList: setDesignList,
+                //             data: data,
+                //             widgetId: widgetId,
+                //         });
+                //         figma.closePlugin();
+                //     }
 
-                // 완료 설정
-                if (msg.type === "complete") {
-                    setPannelComplete({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                    });
-                    figma.closePlugin();
-                }
+                //     // 완료 설정
+                //     if (msg.type === "complete") {
+                //         setPannelComplete({
+                //             visibleList: visibleList,
+                //             invisibleList: invisibleList,
+                //             trackingList: trackingList,
+                //             designList: designList,
+                //             setVisibleList: setVisibleList,
+                //             setInvisibleList: setInvisibleList,
+                //             setTrackingList: setTrackingList,
+                //             setDesignList: setDesignList,
+                //             data: data,
+                //         });
+                //         figma.closePlugin();
+                //     }
 
-                // 순서 올리기
-                if (msg.type === "listUp") {
-                    movePannelItem({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                        move: "up",
-                    });
-                    figma.closePlugin();
-                }
+                //     // 순서 올리기
+                //     if (msg.type === "listUp") {
+                //         movePannelItem({
+                //             visibleList: visibleList,
+                //             invisibleList: invisibleList,
+                //             trackingList: trackingList,
+                //             designList: designList,
+                //             setVisibleList: setVisibleList,
+                //             setInvisibleList: setInvisibleList,
+                //             setTrackingList: setTrackingList,
+                //             setDesignList: setDesignList,
+                //             data: data,
+                //             move: "up",
+                //         });
+                //         figma.closePlugin();
+                //     }
 
-                // 순서 내기리
-                if (msg.type === "listDown") {
-                    movePannelItem({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                        move: "down",
-                    });
-                    figma.closePlugin();
-                }
+                //     // 순서 내기리
+                //     if (msg.type === "listDown") {
+                //         movePannelItem({
+                //             visibleList: visibleList,
+                //             invisibleList: invisibleList,
+                //             trackingList: trackingList,
+                //             designList: designList,
+                //             setVisibleList: setVisibleList,
+                //             setInvisibleList: setInvisibleList,
+                //             setTrackingList: setTrackingList,
+                //             setDesignList: setDesignList,
+                //             data: data,
+                //             move: "down",
+                //         });
+                //         figma.closePlugin();
+                //     }
 
-                // 삭제
-                if (msg.type === "deletePannel") {
-                    deletePannelItem({
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                        data: data,
-                    });
-                    figma.closePlugin();
-                }
+                //     // 삭제
+                //     if (msg.type === "deletePannel") {
+                //         deletePannelItem({
+                //             visibleList: visibleList,
+                //             invisibleList: invisibleList,
+                //             trackingList: trackingList,
+                //             designList: designList,
+                //             setVisibleList: setVisibleList,
+                //             setInvisibleList: setInvisibleList,
+                //             setTrackingList: setTrackingList,
+                //             setDesignList: setDesignList,
+                //             data: data,
+                //         });
+                //         figma.closePlugin();
+                //     }
 
-                // 데이터 불러오기
-                if (msg.type === "importData") {
-                    setImportData({ data: data, setVisibleList: setVisibleList, setInvisibleList: setInvisibleList, setTrackingList: setTrackingList, setDesignList: setDesignList });
-                    figma.closePlugin();
-                }
+                //     // 데이터 불러오기
+                //     if (msg.type === "importData") {
+                //         setImportData({ data: data, setVisibleList: setVisibleList, setInvisibleList: setInvisibleList, setTrackingList: setTrackingList, setDesignList: setDesignList });
+                //         figma.closePlugin();
+                //     }
 
                 // 메세지 표기
                 if (msg.type === "message") {
@@ -184,6 +213,15 @@ function plannerWidget() {
             };
         });
 
+        const addOptions: { option: string; label: string }[] = [];
+
+        widgetOption.panelList.forEach((option) => {
+            addOptions.push({
+                option: option.code,
+                label: option.name,
+            });
+        });
+
         usePropertyMenu(
             [
                 {
@@ -191,13 +229,12 @@ function plannerWidget() {
                     propertyName: "add",
                     tooltip: "Add New Description",
                     selectedOption: descriptionType,
-                    options: [
-                        { option: "", label: "Add New" },
-                        { option: "visible", label: "Visible" },
-                        { option: "invisible", label: "Invisible" },
-                        { option: "tracking", label: "Tracking" },
-                        { option: "design", label: "Design" },
-                    ],
+                    options: [{ option: "", label: "Add New" }, ...addOptions],
+                },
+                {
+                    itemType: "action",
+                    propertyName: "setting",
+                    tooltip: "Setting",
                 },
                 {
                     itemType: "action",
@@ -226,81 +263,84 @@ function plannerWidget() {
                 },
             ],
             ({ propertyName, propertyValue }) => {
+                // 패널 추가
                 if (propertyName === "add") {
                     if (propertyValue !== undefined && propertyValue !== "") {
                         addNewData({
                             type: propertyValue,
-                            visibleList: visibleList,
-                            invisibleList: invisibleList,
-                            trackingList: trackingList,
-                            designList: designList,
-                            setVisibleList: setVisibleList,
-                            setInvisibleList: setInvisibleList,
-                            setTrackingList: setTrackingList,
-                            setDesignList: setDesignList,
+                            widgetData: widgetData,
+                            widgetOption: widgetOption,
+                            setWidgetData: setWidgetData,
                         });
                     }
                 }
 
-                if (propertyName === "complete") {
-                    setAllPannelCompleteStatus({
-                        status: true,
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                    });
-                }
-
-                if (propertyName === "unComplete") {
-                    setAllPannelCompleteStatus({
-                        status: false,
-                        visibleList: visibleList,
-                        invisibleList: invisibleList,
-                        trackingList: trackingList,
-                        designList: designList,
-                        setVisibleList: setVisibleList,
-                        setInvisibleList: setInvisibleList,
-                        setTrackingList: setTrackingList,
-                        setDesignList: setDesignList,
-                    });
-                }
-
-                if (propertyName === "export") {
-                    return new Promise((resolve) => {
-                        dataExport({ widgetTitle: widgetTitle, visibleList: visibleList, invisibleList: invisibleList, trackingList: trackingList, designList: designList });
-                    });
-                }
-
-                if (propertyName === "import") {
-                    return new Promise((resolve) => {
-                        figma.showUI(__uiFiles__.import, { width: 400, height: 300 });
-                    });
-                }
-
-                if (propertyName === "clone") {
-                    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
-                    const parentNode = widgetNode?.parent as BaseNode;
-                    const cloneWidgetNode = widgetNode.cloneWidget({
-                        widgetMode: "list",
-                        widgetTitle: "",
-                        widgetCaption: "",
-                        visibleList: [],
-                        invisibleList: [],
-                        trackingList: [],
-                        designList: [],
-                    });
-                    cloneWidgetNode.x += widgetNode.width;
-                    cloneWidgetNode.x += 100;
-
-                    if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
-                        parentNode.appendChild(cloneWidgetNode);
+                if (propertyName === "setting") {
+                    if (figma.payments?.status.type === "UNPAID") {
+                        figma.payments?.initiateCheckoutAsync();
+                    } else {
+                        return new Promise((resolve) => {
+                            figma.showUI(__uiFiles__.setting, { width: 400, height: 600 });
+                            figma.ui.postMessage(widgetOption);
+                        });
                     }
                 }
+
+                // if (propertyName === "complete") {
+                //     setAllPannelCompleteStatus({
+                //         status: true,
+                //         visibleList: visibleList,
+                //         invisibleList: invisibleList,
+                //         trackingList: trackingList,
+                //         designList: designList,
+                //         setVisibleList: setVisibleList,
+                //         setInvisibleList: setInvisibleList,
+                //         setTrackingList: setTrackingList,
+                //         setDesignList: setDesignList,
+                //     });
+                // }
+
+                // if (propertyName === "unComplete") {
+                //     setAllPannelCompleteStatus({
+                //         status: false,
+                //         visibleList: visibleList,
+                //         invisibleList: invisibleList,
+                //         trackingList: trackingList,
+                //         designList: designList,
+                //         setVisibleList: setVisibleList,
+                //         setInvisibleList: setInvisibleList,
+                //         setTrackingList: setTrackingList,
+                //         setDesignList: setDesignList,
+                //     });
+                // }
+                // if (propertyName === "export") {
+                //     return new Promise((resolve) => {
+                //         dataExport({ widgetTitle: widgetTitle, visibleList: visibleList, invisibleList: invisibleList, trackingList: trackingList, designList: designList });
+                //     });
+                // }
+                // if (propertyName === "import") {
+                //     return new Promise((resolve) => {
+                //         figma.showUI(__uiFiles__.import, { width: 400, height: 300 });
+                //     });
+                // }
+                // if (propertyName === "clone") {
+                //     const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+                //     const parentNode = widgetNode?.parent as BaseNode;
+                //     const cloneWidgetNode = widgetNode.cloneWidget({
+                //         widgetMode: "list",
+                //         widgetTitle: "",
+                //         widgetCaption: "",
+                //         visibleList: [],
+                //         invisibleList: [],
+                //         trackingList: [],
+                //         designList: [],
+                //     });
+                //     cloneWidgetNode.x += widgetNode.width;
+                //     cloneWidgetNode.x += 100;
+                //     if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
+                //         parentNode.appendChild(cloneWidgetNode);
+                //     }
+                // }
             }
         );
 
@@ -309,12 +349,12 @@ function plannerWidget() {
                 name="wrap"
                 width={widgetWidth}
                 direction={"vertical"}
-                spacing={50}
-                padding={50}
-                cornerRadius={10}
+                spacing={Math.round(50 * getScale(widgetOption.fontSize))}
+                padding={Math.round(50 * getScale(widgetOption.fontSize))}
+                cornerRadius={Math.round(10 * getScale(widgetOption.fontSize))}
                 stroke={"#E0D7FB"}
                 strokeAlign={"inside"}
-                strokeWidth={1}
+                strokeWidth={Math.round(1 * getScale(widgetOption.fontSize))}
                 fill={"#FFFFFF"}
                 effect={{
                     type: "drop-shadow",
@@ -323,54 +363,39 @@ function plannerWidget() {
                     blur: 48,
                 }}
             >
-                <AutoLayout name="Page information" width={"fill-parent"} direction={"vertical"} spacing={10}>
+                <AutoLayout name="Page information" width={"fill-parent"} direction={"vertical"} spacing={Math.round(10 * getScale(widgetOption.fontSize))}>
                     <Input
                         value={widgetTitle}
                         placeholder="Page Title"
                         onTextEditEnd={(e) => {
                             setWidgetTitle(e.characters);
                         }}
-                        fontSize={24}
+                        fontSize={Math.round(widgetOption.fontSize * 1.75)}
                         fontWeight={700}
                         fontFamily={"Inter"}
                         width={"fill-parent"}
                         fill="#333"
                         inputBehavior="multiline"
                     />
-                    <AutoLayout
-                        width={"fill-parent"}
-                        fill={"#FAFAFA"}
-                        cornerRadius={10}
-                        padding={{
-                            vertical: 10,
-                            horizontal: 20,
+                    <Input
+                        value={widgetCaption}
+                        placeholder="Page Description"
+                        onTextEditEnd={(e) => {
+                            setWidgetCaption(e.characters);
                         }}
-                    >
-                        <Input
-                            value={widgetCaption}
-                            placeholder="Page Description"
-                            onTextEditEnd={(e) => {
-                                setWidgetCaption(e.characters);
-                            }}
-                            fontSize={16}
-                            fontFamily={"Inter"}
-                            width={"fill-parent"}
-                            fill="#616161"
-                            inputBehavior="multiline"
-                        />
-                    </AutoLayout>
+                        fontSize={widgetOption.fontSize}
+                        fontFamily={"Inter"}
+                        width={"fill-parent"}
+                        fill="#616161"
+                        inputBehavior="multiline"
+                    />
                 </AutoLayout>
 
                 {getListStructure({
-                    visibleList: visibleList,
-                    invisibleList: invisibleList,
-                    trackingList: trackingList,
-                    designList: designList,
-                    setVisibleList: setVisibleList,
-                    setInvisibleList: setInvisibleList,
-                    setTrackingList: setTrackingList,
-                    setDesignList: setDesignList,
                     menuData: menuData,
+                    widgetOption: widgetOption,
+                    widgetData: widgetData,
+                    setWidgetData: setWidgetData,
                     setMenuData: setMenuData,
                 })}
                 {menuStructure}

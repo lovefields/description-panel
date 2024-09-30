@@ -1,4 +1,5 @@
-import type { PannelData, ChildPannelData, CreatePinterArgument, LinkItem, PointerData, AddChildPannelArgument, GetPannelStructure, CompletePinterArgument, CompletePannelArgument, MovePannelArgument, EditLinkArgument } from "./type";
+import "./type.d.ts";
+import dayjs from "dayjs";
 
 export function setPanelCode() {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -40,68 +41,53 @@ function getTargetValueAndFunction({ type, visibleList, invisibleList, trackingL
     };
 }
 
-export function getLayoutSize({ visibleList, invisibleList, trackingList, designList }: { visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[] }) {
+export function getScale(fontSize: number) {
+    return ((100 / 14) * fontSize) / 100;
+}
+
+export function getLayoutSize(widgetData: WidgetData, widgetOption: WidgetOption) {
+    const percent: number = getScale(widgetOption.fontSize);
     let isEmpty: boolean = true;
     let width: number = 100;
 
-    if (visibleList.length > 0) {
-        isEmpty = false;
-        width += 520;
-    }
-
-    if (invisibleList.length > 0) {
-        isEmpty = false;
-        width += 520;
-    }
-
-    if (trackingList.length > 0) {
-        isEmpty = false;
-        width += 520;
-    }
-
-    if (designList.length > 0) {
-        isEmpty = false;
-        width += 520;
+    for (let [key, value] of Object.entries(widgetData)) {
+        if (value.length > 0) {
+            isEmpty = false;
+            width += 500 * percent;
+            width += 20 * percent;
+        }
     }
 
     if (isEmpty === true) {
-        width += 520;
+        width += 500 * percent;
+        width += 20 * percent;
     }
 
-    width -= 20;
+    width -= 20 * percent;
 
-    return width;
+    return Math.floor(width);
 }
 
-export function isEmptyList({ visibleList, invisibleList, trackingList, designList }: { visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[] }) {
+export function isEmptyList(data: WidgetData) {
     let isEmpty: boolean = true;
 
-    if (visibleList.length > 0) {
-        isEmpty = false;
-    }
-
-    if (invisibleList.length > 0) {
-        isEmpty = false;
-    }
-
-    if (trackingList.length > 0) {
-        isEmpty = false;
-    }
-
-    if (designList.length > 0) {
-        isEmpty = false;
+    for (let [key, value] of Object.entries(data)) {
+        if (value !== undefined && value.length > 0) {
+            isEmpty = false;
+        }
     }
 
     return isEmpty;
 }
 
 // 링크 수정 모달
-export function openLinkEditModal(type: string, isChild: boolean, data: PannelData | ChildPannelData) {
+export function openLinkEditModal(type: string, isChild: boolean, data: PannelData | ChildPannelData, widgetOption: WidgetOption) {
     figma.showUI(__uiFiles__.link, { width: 450, height: 600 });
     figma.ui.postMessage({
         type: type,
         isChild: isChild,
         data: data,
+        widgetOption: widgetOption,
     });
 }
 
@@ -135,6 +121,9 @@ export function addChildPannelData({ visibleList, invisibleList, trackingList, d
         pointerList: [],
         parentIndex: data.pannelData.index,
         parentCode: data.pannelData.code,
+        date: dayjs().format("YYYY-MM-DD"),
+        showUrl: false,
+        writer: figma.activeUsers[0].name,
     });
     targetFunction(targetValue);
 }
@@ -515,71 +504,98 @@ export function setImportData({ data, setVisibleList, setInvisibleList, setTrack
 }
 
 // 새 데이터 넣기
-export function addNewData({ type, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList }: { type: string; visibleList: PannelData[]; invisibleList: PannelData[]; trackingList: PannelData[]; designList: PannelData[]; setVisibleList: Function; setInvisibleList: Function; setTrackingList: Function; setDesignList: Function }) {
-    const { targetFunction, targetValue } = getTargetValueAndFunction({ type, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+export function addNewData({ type, widgetData, widgetOption, setWidgetData }: { type: string; widgetData: WidgetData; widgetOption: WidgetOption; setWidgetData: Function }) {
+    // TODO : 지원하면 변경하기
+    // const data = structuredClone(widgetData);
+    const data: WidgetData = JSON.parse(JSON.stringify(widgetData));
+    let sutable: boolean = false;
 
-    targetFunction(
-        targetValue.concat([
-            {
-                index: targetValue.length,
-                code: setPanelCode(),
-                complete: false,
-                linkList: [],
-                content: "",
-                pointerList: [],
-                childList: [],
-            },
-        ])
-    );
+    if (data[type] === undefined) {
+        data[type] = [];
+    }
+
+    if (data[type].length > 5) {
+        if (figma.payments?.status.type === "PAID") {
+            sutable = true;
+        } else {
+            sutable = false;
+        }
+    } else {
+        sutable = true;
+    }
+
+    if (widgetOption.isChanged === false) {
+        sutable = true;
+    } else {
+        if (figma.payments?.status.type === "PAID") {
+            sutable = true;
+        } else {
+            sutable = false;
+        }
+    }
+
+    if (sutable === true) {
+        data[type].push({
+            index: data[type].length,
+            code: setPanelCode(),
+            complete: false,
+            linkList: [],
+            content: "",
+            pointerList: [],
+            childList: [],
+            date: dayjs().format("YYYY-MM-DD"),
+            showUrl: false,
+            writer: figma.activeUsers[0].name,
+        });
+
+        setWidgetData(data);
+    } else {
+        figma.payments?.initiateCheckoutAsync();
+    }
 }
 
 // 링크정보 할당
-export function setLinkData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: EditLinkArgument) {
-    const { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelData.type, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
-
+export function setLinkData({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: EditLinkArgument }) {
     if (data.pannelData.isChild === true) {
-        targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
-
-        targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
-            const target = figma.getNodeById(nodeId) as WidgetNode | null;
-
-            if (target !== null) {
-                let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
-
-                defaultData.linkList = data.linkList;
-
-                target.setWidgetSyncedState({
-                    widgetMode: "pointer",
-                    pointerData: defaultData,
-                    arrowType: target.widgetSyncedState["arrowType"],
-                });
-            }
-        });
+        // 자식의 경우
+        // TODO : 자식의 경우 제작
+        //     targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
+        //     targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
+        //         const target = figma.getNodeById(nodeId) as WidgetNode | null;
+        //         if (target !== null) {
+        //             let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
+        //             defaultData.linkList = data.linkList;
+        //             target.setWidgetSyncedState({
+        //                 widgetMode: "pointer",
+        //                 pointerData: defaultData,
+        //                 arrowType: target.widgetSyncedState["arrowType"],
+        //             });
+        //         }
+        //     });
     } else {
-        targetValue[data.pannelData.data.index].linkList = data.linkList;
-
-        targetValue[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
-            const target = figma.getNodeById(nodeId) as WidgetNode | null;
-
-            if (target !== null) {
-                let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
-
-                defaultData.linkList = data.linkList;
-
-                target.setWidgetSyncedState({
-                    widgetMode: "pointer",
-                    pointerData: defaultData,
-                    arrowType: target.widgetSyncedState["arrowType"],
-                });
-            }
-        });
+        // 자식이 아닌 경우
+        widgetData[data.pannelData.type][data.pannelData.data.index].linkList = data.linkList;
+        // TODO : 포인터 업데이트
+        //     targetValue[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
+        //         const target = figma.getNodeById(nodeId) as WidgetNode | null;
+        //         if (target !== null) {
+        //             let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
+        //             defaultData.linkList = data.linkList;
+        //             target.setWidgetSyncedState({
+        //                 widgetMode: "pointer",
+        //                 pointerData: defaultData,
+        //                 arrowType: target.widgetSyncedState["arrowType"],
+        //             });
+        //         }
+        //     });
     }
 
-    targetFunction(targetValue);
+
+    setWidgetData(widgetData);
 }
 
 // 뎁스에 의한 메뉴 위치 연산
-export function getMenuPosition(widget: WidgetNode, event: WidgetClickEvent) {
+export function getMenuPosition(widget: WidgetNode, event: WidgetClickEvent, widgetOption: WidgetOption) {
     const parentNode = widget.parent;
     let x = 0;
     let y = 0;
@@ -587,11 +603,11 @@ export function getMenuPosition(widget: WidgetNode, event: WidgetClickEvent) {
     if (parentNode !== null && parentNode.type !== "PAGE") {
         const { nodeX, nodeY } = getParentPosition(parentNode);
 
-        x = Math.floor(event.canvasX) - nodeX - Math.floor(widget.x) - 167;
-        y = Math.floor(event.canvasY) - nodeY - Math.floor(widget.y) + 10;
+        x = Math.floor(event.canvasX) - nodeX - Math.floor(widget.x) - (Math.round(157 * getScale(widgetOption.fontSize)) + Math.round(10 * getScale(widgetOption.fontSize)));
+        y = Math.floor(event.canvasY) - nodeY - Math.floor(widget.y) + Math.round(10 * getScale(widgetOption.fontSize));
     } else {
-        x = Math.floor(event.canvasX) - Math.floor(widget.x) - 167;
-        y = Math.floor(event.canvasY) - Math.floor(widget.y) + 10;
+        x = Math.floor(event.canvasX) - Math.floor(widget.x) - (Math.round(157 * getScale(widgetOption.fontSize)) + Math.round(10 * getScale(widgetOption.fontSize)));
+        y = Math.floor(event.canvasY) - Math.floor(widget.y) + Math.round(10 * getScale(widgetOption.fontSize));
     }
 
     return {
@@ -620,4 +636,20 @@ function getParentPosition(node: BaseNode, x: number = 0, y: number = 0) {
             };
         }
     }
+}
+
+export function dateFormat(value: Date) {
+    const year = value.getFullYear();
+    let month = String(value.getMonth() + 1);
+    let day = String(value.getDate());
+
+    if (month.length === 1) {
+        month = "0" + month;
+    }
+
+    if (day.length === 1) {
+        day = "0" + day;
+    }
+
+    return `${year}-${month}-${day}`;
 }

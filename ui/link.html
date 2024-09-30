@@ -6,7 +6,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row list-area">
         <div class="item link-list-area">
             <p class="title">Link list</p>
             <p class="caption">Edit link about your description.</p>
@@ -76,14 +76,17 @@
     window.onmessage = (event) => {
         if (event.data.pluginMessage !== "") {
             const editData = event.data.pluginMessage;
+            const panelOption = editData.widgetOption.panelList.find((item) => item.code === editData.type);
 
-            document.querySelector(".top-info-area").classList.add(`--${editData.type}`);
             if (editData.isChild === true) {
                 document.querySelector(".top-info-area .number").textContent = `${editData.data.parentIndex + 1} - ${editData.data.index + 1}`;
             } else {
                 document.querySelector(".top-info-area .number").textContent = editData.data.index + 1;
             }
-            document.querySelector(".top-info-area .type").textContent = editData.type.capitalize();
+            document.querySelector(".top-info-area .number").style.background = panelOption.bgColor;
+            document.querySelector(".top-info-area .number").style.color = panelOption.textColor;
+            document.querySelector(".top-info-area .type").textContent = panelOption.name;
+            document.querySelector(".top-info-area .type").style.color = panelOption.textColor;
             linkList = editData.data.linkList;
             renderingLinkList();
 
@@ -96,7 +99,6 @@
                 }
 
                 if (suitable === true) {
-                    // const newData = { ...editData.data, content: $textarea.value.trim(), linkList: linkList };
                     parent.postMessage(
                         {
                             pluginMessage: {
@@ -109,23 +111,6 @@
                         },
                         "*"
                     );
-
-                    // if (editData.isChild === true) {
-
-                    // } else {
-                    //     parent.postMessage(
-                    //         {
-                    //             pluginMessage: {
-                    //                 type: "editPannel",
-                    //                 data: {
-                    //                     pannelType: editData.type,
-                    //                     pannelData: newData,
-                    //                 },
-                    //             },
-                    //         },
-                    //         "*"
-                    //     );
-                    // }
                 } else {
                     parent.postMessage(
                         {
@@ -191,16 +176,25 @@
         let HTML = "";
 
         linkList.forEach((item, i) => {
+            let numberText = String(i + 1);
+
+            if (numberText.length === 1) {
+                numberText = "0" + numberText;
+            }
+
             HTML += `<div class="link-row">`;
+            HTML += `<div class="li number-area">`;
+            HTML += `<p class="number">${numberText}</p>`;
+            HTML += `<button class="btn-delete js-delete" data-idx="${i}"><svg width="20" height="20" viewBox="0 0 20 20" class="icon" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="15.9375" y="9.375" width="1.25" height="11.875" rx="0.625" transform="rotate(90 15.9375 9.375)" fill="#7A7A7A"/></svg></button>`;
+            HTML += `</div>`;
             HTML += `<div class="li">`;
-            HTML += `<p class="text">Name :</p>`;
+            HTML += `<p class="text">Name</p>`;
             HTML += `<input type="text" value="${item.name}" class="input js-name">`;
             HTML += `</div>`;
             HTML += `<div class="li">`;
-            HTML += `<p class="text">URL :</p>`;
+            HTML += `<p class="text">URL</p>`;
             HTML += `<input type="text" value="${item.value}" class="input js-value">`;
             HTML += `</div>`;
-            HTML += `<button class="btn-delete js-delete" data-idx="${i}"></button>`;
             HTML += `</div>`;
         });
 
@@ -213,6 +207,10 @@
         margin: 0;
         padding: 0;
         font-family: "Inter", sans-serif;
+    }
+
+    p {
+        margin: 0;
     }
 
     .box {
@@ -240,6 +238,11 @@
 
     .top-area .item {
         flex: 1;
+    }
+
+    .list-area {
+        flex: 1;
+        overflow-y: auto;
     }
 
     .item .title {
@@ -342,22 +345,43 @@
     .link-list-area .link-list {
         display: flex;
         flex-direction: column;
-        row-gap: 5px;
+        row-gap: 10px;
         text-align: left;
     }
 
     .link-list-area .link-list .link-row {
         display: flex;
         flex-direction: column;
-        row-gap: 2px;
-        position: relative;
-        padding-right: 30px;
+        row-gap: 10px;
+        padding: 12px 12px 16px;
+        background: #fafafa;
+        border-radius: 8px;
     }
 
     .link-list-area .link-list .li {
         display: flex;
-        column-gap: 5px;
+        column-gap: 10px;
         align-items: center;
+    }
+
+    .link-list-area .link-list .li.number-area {
+        justify-content: space-between;
+    }
+    .link-list-area .link-list .li.number-area .number {
+        color: #616161;
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .link-list-area .link-list .btn-delete {
+        width: 24px;
+        height: 24px;
+        margin: 0;
+        padding: 0;
+        background: #f1f1f1;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
     }
 
     .link-list-area .link-list .text {
@@ -369,52 +393,17 @@
 
     .link-list-area .link-list .input {
         width: 100%;
-        height: 28px;
-        padding: 0 5px;
-        border: 1px solid #d1c3f9;
-        font-size: 14px;
-        outline: 0;
+        height: 40px;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 8px 12px;
         box-sizing: border-box;
     }
 
     .link-list-area .link-list .input.--error {
         background: #fff4f4;
         border-color: #e84e4e;
-    }
-
-    .link-list-area .link-list .btn-delete {
-        position: absolute;
-        top: 50%;
-        right: 0;
-        width: 20px;
-        height: 20px;
-        background: #f0ebfd;
-        border: 0;
-        border-radius: 5px;
-        transform: translateY(-50%);
-        outline: 0;
-        cursor: pointer;
-    }
-
-    .link-list-area .link-list .btn-delete::after,
-    .link-list-area .link-list .btn-delete::before {
-        display: block;
-        content: "";
-        position: absolute;
-        top: 9px;
-        left: 5px;
-        width: 10px;
-        height: 2px;
-        background: #b29bf5;
-        border-radius: 2px;
-    }
-
-    .link-list-area .link-list .btn-delete::after {
-        transform: rotate(-45deg);
-    }
-
-    .link-list-area .link-list .btn-delete::before {
-        transform: rotate(45deg);
     }
 
     .link-list-area .btn-add {

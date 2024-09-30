@@ -1,4 +1,4 @@
-export interface LinkItem {
+interface LinkItem {
     name: string;
     value: string;
 }
@@ -10,13 +10,16 @@ interface DefaultPannelData {
     content: string;
     linkList: LinkItem[];
     pointerList: string[];
+    writer: string;
+    showUrl: boolean;
+    date: string;
 }
 
-export interface PannelData extends DefaultPannelData {
+interface PannelData extends DefaultPannelData {
     childList: ChildPannelData[];
 }
 
-export interface ChildPannelData extends DefaultPannelData {
+interface ChildPannelData extends DefaultPannelData {
     parentIndex: number;
     parentCode: string;
 }
@@ -38,33 +41,32 @@ interface PannelArgument {
     setDesignList: Function;
 }
 
-export interface GetPannelStructure extends PannelArgument {
+interface GetPannelStructure extends PannelArgument {
     type: string;
 }
 
-export interface CompletePannelArgument extends PannelArgument {
+interface CompletePannelArgument extends PannelArgument {
     status: boolean;
 }
 
-export interface AddChildPannelArgument extends PannelArgument {
+interface AddChildPannelArgument extends PannelArgument {
     data: {
         pannelType: string;
         pannelData: PannelData;
     };
 }
 
-export interface EditLinkArgument extends PannelArgument {
-    data: {
-        pannelData: {
-            type: string;
-            isChild: boolean;
-            data: PannelData | ChildPannelData;
-        };
-        linkList: LinkItem[];
+interface EditLinkArgument {
+    pannelData: {
+        type: string;
+        isChild: boolean;
+        data: PannelData | ChildPannelData;
+        widgetOption: WidgetOption;
     };
+    linkList: LinkItem[];
 }
 
-export interface CreatePinterArgument extends PannelArgument {
+interface CreatePinterArgument extends PannelArgument {
     data: {
         pannelType: string;
         isChild: boolean;
@@ -73,7 +75,7 @@ export interface CreatePinterArgument extends PannelArgument {
     widgetId: string;
 }
 
-export interface MovePannelArgument extends PannelArgument {
+interface MovePannelArgument extends PannelArgument {
     data: {
         pannelType: string;
         isChild: boolean;
@@ -82,7 +84,7 @@ export interface MovePannelArgument extends PannelArgument {
     move: string;
 }
 
-export interface CompletePinterArgument extends PannelArgument {
+interface CompletePinterArgument extends PannelArgument {
     data: {
         pannelType: string;
         isChild: boolean;
@@ -90,7 +92,7 @@ export interface CompletePinterArgument extends PannelArgument {
     };
 }
 
-export interface MenuData {
+interface MenuData {
     active: boolean;
     x: number;
     y: number;
@@ -102,7 +104,7 @@ export interface MenuData {
     targetParentIdx: number | null;
 }
 
-export interface PointerData {
+interface PointerData {
     viewText: string;
     type: string;
     content: string;
@@ -110,4 +112,19 @@ export interface PointerData {
     index: number;
     parentIndex: number | null;
     parentWidgetId: string;
+}
+
+interface WidgetOption {
+    fontSize: number;
+    isChanged: boolean;
+    panelList: {
+        name: string;
+        code: string;
+        bgColor: string;
+        textColor: string;
+    }[];
+}
+
+interface WidgetData {
+    [key: string]: PannelData[];
 }
