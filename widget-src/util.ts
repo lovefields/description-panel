@@ -335,17 +335,17 @@ function arrangementChildPannel(list: PannelData) {
 }
 
 // 패널 삭제
-export function deletePannelItem({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: CompletePinterArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+export function deletePannelItem({ widgetData, setWidgetData, data }: { widgetData: WidgetData; setWidgetData: Function; data: CompletePinterArgument }) {
+    // let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
 
     if (data.isChild === true) {
         const pannelData = data.pannelData as ChildPannelData;
 
-        targetValue[pannelData.parentIndex].childList.splice(pannelData.index, 1);
+        widgetData[data.pannelType][pannelData.parentIndex].childList.splice(pannelData.index, 1);
     } else {
         const pannelData = data.pannelData as PannelData;
 
-        targetValue.splice(pannelData.index, 1);
+        widgetData[data.pannelType].splice(pannelData.index, 1);
 
         pannelData.childList.forEach((child: ChildPannelData) => {
             child.pointerList.forEach((nodeId: string) => {
@@ -366,48 +366,8 @@ export function deletePannelItem({ visibleList, invisibleList, trackingList, des
         }
     });
 
-    targetValue.forEach((row, i) => {
-        row.index = i;
-        row.pointerList.forEach((nodeId: string) => {
-            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
-
-            if (widgetNode !== null) {
-                widgetNode.setWidgetSyncedState({
-                    widgetMode: "pointer",
-                    pointerData: {
-                        ...widgetNode.widgetSyncedState["pointerData"],
-                        index: i,
-                        viewText: i + 1,
-                    },
-                    arrowType: widgetNode.widgetSyncedState["arrowType"],
-                });
-            }
-        });
-
-        row.childList.forEach((child, j) => {
-            child.index = j;
-            child.parentIndex = i;
-
-            child.pointerList.forEach((nodeId: string) => {
-                const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
-
-                if (widgetNode !== null) {
-                    widgetNode.setWidgetSyncedState({
-                        widgetMode: "pointer",
-                        pointerData: {
-                            ...widgetNode.widgetSyncedState["pointerData"],
-                            index: j,
-                            parentIndex: i,
-                            viewText: `${i + 1}-${j + 1}`,
-                        },
-                        arrowType: widgetNode.widgetSyncedState["arrowType"],
-                    });
-                }
-            });
-        });
-    });
-
-    targetFunction(targetValue);
+    widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType]);
+    setWidgetData(widgetData);
 }
 
 // 데이터 내보내기

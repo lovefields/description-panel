@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -156,21 +156,15 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
-                //     // 삭제
-                //     if (msg.type === "deletePannel") {
-                //         deletePannelItem({
-                //             visibleList: visibleList,
-                //             invisibleList: invisibleList,
-                //             trackingList: trackingList,
-                //             designList: designList,
-                //             setVisibleList: setVisibleList,
-                //             setInvisibleList: setInvisibleList,
-                //             setTrackingList: setTrackingList,
-                //             setDesignList: setDesignList,
-                //             data: data,
-                //         });
-                //         figma.closePlugin();
-                //     }
+                // 삭제
+                if (msg.type === "deletePannel") {
+                    deletePannelItem({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
 
                 //     // 데이터 불러오기
                 //     if (msg.type === "importData") {
