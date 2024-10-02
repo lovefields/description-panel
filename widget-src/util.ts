@@ -92,7 +92,7 @@ export function openLinkEditModal(type: string, isChild: boolean, data: PannelDa
 }
 
 // 뷰어 모달 오픈
-export function openViewModal(viewNumber: string, pannelType: string, content: string, linkList: LinkItem[]) {
+export function openViewModal(viewNumber: string, pannelType: string, content: string, linkList: LinkItem[], bgColor: string, textColor: string) {
     let width = 900;
 
     if (linkList.length === 0) {
@@ -105,16 +105,18 @@ export function openViewModal(viewNumber: string, pannelType: string, content: s
         pannelType: pannelType,
         content: content,
         linkList: linkList,
+        bgColor: bgColor,
+        textColor: textColor,
     });
 }
 
 // 자식 패널 정보 추가 함수
-export function addChildPannelData({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: AddChildPannelArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+export function addChildPannelData({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: AddChildPannelArgument }) {
+    const tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
 
-    targetValue[data.pannelData.index].childList.push({
+    tempData[data.pannelType][data.pannelData.index].childList.push({
         code: setPanelCode(),
-        index: targetValue[data.pannelData.index].childList.length,
+        index: tempData[data.pannelType][data.pannelData.index].childList.length,
         complete: false,
         content: "",
         linkList: [],
@@ -125,14 +127,15 @@ export function addChildPannelData({ visibleList, invisibleList, trackingList, d
         showUrl: false,
         writer: figma.activeUsers[0].name,
     });
-    targetFunction(targetValue);
+
+    setWidgetData(tempData);
 }
 
 // 포인터 생성 함수
-export function createPinter({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data, widgetId }: CreatePinterArgument) {
+export function createPinter({ widgetData, setWidgetData, widgetOption, data, widgetId }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: CreatePinterArgument; widgetId: string }) {
     const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
     const parentNode = widgetNode?.parent as BaseNode;
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+    const panelOption = widgetOption.panelList.find((item) => item.code === data.pannelType);
     let viewText: string = "";
 
     if (data.isChild === true) {
@@ -145,7 +148,10 @@ export function createPinter({ visibleList, invisibleList, trackingList, designL
         widgetMode: "pointer",
         pointerData: {
             viewText: viewText,
-            type: data.pannelType,
+            type: panelOption?.name,
+            code: data.pannelType,
+            bgColor: panelOption?.bgColor,
+            textColor: panelOption?.textColor,
             content: data.pannelData.content,
             linkList: data.pannelData.linkList,
             index: data.pannelData.index,
@@ -155,17 +161,14 @@ export function createPinter({ visibleList, invisibleList, trackingList, designL
     });
 
     cloneWidgetNode.x -= 60;
-    data.pannelData.pointerList.push(cloneWidgetNode.id);
 
     if (data.isChild === true) {
-        const childData = data.pannelData as ChildPannelData;
-
-        targetValue[childData.parentIndex].childList[childData.index] = childData;
+        widgetData[data.pannelType][(data.pannelData as ChildPannelData).parentIndex].childList[data.pannelData.index].pointerList.push(cloneWidgetNode.id);
     } else {
-        targetValue[data.pannelData.index] = data.pannelData as PannelData;
+        widgetData[data.pannelType][data.pannelData.index].pointerList.push(cloneWidgetNode.id);
     }
 
-    targetFunction(targetValue);
+    setWidgetData(widgetData);
 
     if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
         parentNode.appendChild(cloneWidgetNode);
@@ -558,38 +561,49 @@ export function addNewData({ type, widgetData, widgetOption, setWidgetData }: { 
 export function setLinkData({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: EditLinkArgument }) {
     if (data.pannelData.isChild === true) {
         // 자식의 경우
-        // TODO : 자식의 경우 제작
-        //     targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
-        //     targetValue[(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
-        //         const target = figma.getNodeById(nodeId) as WidgetNode | null;
-        //         if (target !== null) {
-        //             let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
-        //             defaultData.linkList = data.linkList;
-        //             target.setWidgetSyncedState({
-        //                 widgetMode: "pointer",
-        //                 pointerData: defaultData,
-        //                 arrowType: target.widgetSyncedState["arrowType"],
-        //             });
-        //         }
-        //     });
+        widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
+        
+        widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId, i) => {
+            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (widgetNode !== null) {
+                let defaultData = {
+                    ...(widgetNode.widgetSyncedState["pointerData"] as PointerData),
+                    linkList: data.linkList,
+                };
+
+                widgetNode.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: defaultData,
+                    arrowType: widgetNode.widgetSyncedState["arrowType"],
+                });
+            } else {
+                widgetData[data.pannelData.type][data.pannelData.data.index].pointerList.splice(i, 1);
+            }
+        });
     } else {
         // 자식이 아닌 경우
         widgetData[data.pannelData.type][data.pannelData.data.index].linkList = data.linkList;
-        // TODO : 포인터 업데이트
-        //     targetValue[data.pannelData.data.index].pointerList.forEach((nodeId: string) => {
-        //         const target = figma.getNodeById(nodeId) as WidgetNode | null;
-        //         if (target !== null) {
-        //             let defaultData = target.widgetSyncedState["pointerData"] as PointerData;
-        //             defaultData.linkList = data.linkList;
-        //             target.setWidgetSyncedState({
-        //                 widgetMode: "pointer",
-        //                 pointerData: defaultData,
-        //                 arrowType: target.widgetSyncedState["arrowType"],
-        //             });
-        //         }
-        //     });
-    }
 
+        widgetData[data.pannelData.type][data.pannelData.data.index].pointerList.forEach((nodeId, i) => {
+            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+            if (widgetNode !== null) {
+                let defaultData = {
+                    ...(widgetNode.widgetSyncedState["pointerData"] as PointerData),
+                    linkList: data.linkList,
+                };
+
+                widgetNode.setWidgetSyncedState({
+                    widgetMode: "pointer",
+                    pointerData: defaultData,
+                    arrowType: widgetNode.widgetSyncedState["arrowType"],
+                });
+            } else {
+                widgetData[data.pannelData.type][data.pannelData.data.index].pointerList.splice(i, 1);
+            }
+        });
+    }
 
     setWidgetData(widgetData);
 }

@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -44,7 +44,12 @@ function plannerWidget() {
                 },
             ],
         });
-        const [widgetData, setWidgetData] = useSyncedState<WidgetData>("widgetData", {});
+        const [widgetData, setWidgetData] = useSyncedState<WidgetData>("widgetData", {
+            a: [],
+            b: [],
+            c: [],
+            d: [],
+        });
         const [menuData, setMenuData] = useSyncedState<MenuData>("menuData", {
             active: false,
             x: 0,
@@ -80,6 +85,7 @@ function plannerWidget() {
                         isChanged: true,
                         panelList: data.panelList,
                     });
+                    // TODO : 데이터 정리
                     // TODO : 모든 포인터 업데이트
                     figma.closePlugin();
                 }
@@ -95,38 +101,28 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
-                //     // 자식 패널 추가
-                //     if (msg.type === "addChildPannel") {
-                //         addChildPannelData({
-                //             visibleList: visibleList,
-                //             invisibleList: invisibleList,
-                //             trackingList: trackingList,
-                //             designList: designList,
-                //             setVisibleList: setVisibleList,
-                //             setInvisibleList: setInvisibleList,
-                //             setTrackingList: setTrackingList,
-                //             setDesignList: setDesignList,
-                //             data: data,
-                //         });
-                //         figma.closePlugin();
-                //     }
+                // 포인터 생성
+                if (msg.type === "createPointer") {
+                    createPinter({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        widgetOption: widgetOption,
+                        data: data,
+                        widgetId: widgetId,
+                    });
+                    figma.closePlugin();
+                }
 
-                //     // 포인터 생성
-                //     if (msg.type === "createPointer") {
-                //         createPinter({
-                //             visibleList: visibleList,
-                //             invisibleList: invisibleList,
-                //             trackingList: trackingList,
-                //             designList: designList,
-                //             setVisibleList: setVisibleList,
-                //             setInvisibleList: setInvisibleList,
-                //             setTrackingList: setTrackingList,
-                //             setDesignList: setDesignList,
-                //             data: data,
-                //             widgetId: widgetId,
-                //         });
-                //         figma.closePlugin();
-                //     }
+                // 자식 패널 추가
+                if (msg.type === "addChildPannel") {
+                    addChildPannelData({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        widgetOption: widgetOption,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
 
                 //     // 완료 설정
                 //     if (msg.type === "complete") {
@@ -405,6 +401,9 @@ function plannerWidget() {
         const [pointerData] = useSyncedState<PointerData>("pointerData", {
             viewText: "",
             type: "",
+            code: "",
+            bgColor: "",
+            textColor: "",
             content: "",
             linkList: [],
             index: -1,
@@ -443,7 +442,7 @@ function plannerWidget() {
             ({ propertyName, propertyValue }) => {
                 if (propertyName === "view") {
                     return new Promise((resolve) => {
-                        openViewModal(pointerData.viewText, pointerData.type, pointerData.content, pointerData.linkList);
+                        openViewModal(pointerData.viewText, pointerData.type, pointerData.content, pointerData.linkList, pointerData.bgColor, pointerData.textColor);
                     });
                 }
 

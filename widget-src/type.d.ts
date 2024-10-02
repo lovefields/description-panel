@@ -49,11 +49,9 @@ interface CompletePannelArgument extends PannelArgument {
     status: boolean;
 }
 
-interface AddChildPannelArgument extends PannelArgument {
-    data: {
-        pannelType: string;
-        pannelData: PannelData;
-    };
+interface AddChildPannelArgument {
+    pannelType: string;
+    pannelData: PannelData;
 }
 
 interface EditLinkArgument {
@@ -66,13 +64,10 @@ interface EditLinkArgument {
     linkList: LinkItem[];
 }
 
-interface CreatePinterArgument extends PannelArgument {
-    data: {
-        pannelType: string;
-        isChild: boolean;
-        pannelData: PannelData | ChildPannelData;
-    };
-    widgetId: string;
+interface CreatePinterArgument {
+    pannelType: string;
+    isChild: boolean;
+    pannelData: PannelData | ChildPannelData;
 }
 
 interface MovePannelArgument extends PannelArgument {
@@ -107,6 +102,9 @@ interface MenuData {
 interface PointerData {
     viewText: string;
     type: string;
+    code: string;
+    bgColor: string;
+    textColor: string;
     content: string;
     linkList: LinkItem[];
     index: number;

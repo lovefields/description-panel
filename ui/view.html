@@ -34,9 +34,12 @@
         const $linkArea = document.querySelector(".link-list-area");
         const viewData = event.data.pluginMessage;
 
-        document.querySelector(".top-info-area").classList.add(`--${viewData.pannelType}`);
+        console.log("viewData", viewData);
         document.querySelector(".top-info-area .number").textContent = viewData.viewNumber;
+        document.querySelector(".top-info-area .number").style.background = viewData.bgColor;
+        document.querySelector(".top-info-area .number").style.color = viewData.textColor;
         document.querySelector(".top-info-area .type").textContent = viewData.pannelType.capitalize();
+        document.querySelector(".top-info-area .type").style.color = viewData.textColor;
         document.querySelector(".description-area").innerHTML = viewData.content.replaceAll("\u2028", "<br>").replaceAll("\u2029", "<br>").replaceAll(/\n/g, "<br>");
 
         if (viewData.linkList.length === 0) {
@@ -121,42 +124,6 @@
         border-radius: 5px;
         font-size: 14px;
         font-weight: bold;
-    }
-
-    .top-info-area.--visible .number {
-        background: #6436ea;
-    }
-
-    .top-info-area.--visible .type {
-        background: #f0ebfd;
-        color: #6436ea;
-    }
-
-    .top-info-area.--invisible .number {
-        background: #f66134;
-    }
-
-    .top-info-area.--invisible .type {
-        background: #ffefea;
-        color: #f66134;
-    }
-
-    .top-info-area.--tracking .number {
-        background: #47b6fe;
-    }
-
-    .top-info-area.--tracking .type {
-        background: #ecf7ff;
-        color: #47b6fe;
-    }
-
-    .top-info-area.--design .number {
-        background: #38c66b;
-    }
-
-    .top-info-area.--design .type {
-        background: #e9faef;
-        color: #38c66b;
     }
 
     .description-area {

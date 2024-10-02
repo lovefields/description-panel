@@ -1,5 +1,6 @@
 import "./type.d.ts";
 import { isEmptyList, openViewModal, goToNumber, openLinkEditModal, getMenuPosition, getScale } from "./util";
+import dayjs from "dayjs";
 
 const { widget } = figma;
 const { useWidgetNodeId, AutoLayout, Text, Rectangle, SVG, Input } = widget;
@@ -115,16 +116,15 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
     const bgColor: string = panelOptionData!.bgColor;
     const textColor: string = panelOptionData!.textColor;
 
-    console.log("data", data);
-
     if (panelOptionData !== undefined) {
         return (
             <AutoLayout name="item" width={"fill-parent"} direction="vertical" key={data.code} fill={"#fff"} stroke={"#E0E0E0"} strokeAlign={"inside"} strokeWidth={Math.round(1 * getScale(widgetOption.fontSize))} spacing={Math.round(20 * getScale(widgetOption.fontSize))} cornerRadius={Math.round(10 * getScale(widgetOption.fontSize))} padding={Math.round(10 * getScale(widgetOption.fontSize))} overflow="visible">
                 <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"} opacity={data.complete ? 0.3 : 1} overflow="visible">
                     <AutoLayout
                         name="pointer"
-                        width={Math.round(24 * getScale(widgetOption.fontSize))}
+                        width={"hug-contents"}
                         height={Math.round(24 * getScale(widgetOption.fontSize))}
+                        padding={{ horizontal: Math.round(10 * getScale(widgetOption.fontSize)), vertical: 0 }}
                         fill={bgColor}
                         cornerRadius={Math.round(8 * getScale(widgetOption.fontSize))}
                         horizontalAlignItems={"center"}
@@ -247,25 +247,36 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
 
                                 if (isChild === true) {
                                     listData[(data as ChildPannelData).parentIndex].childList[data.index].content = textData;
+                                    listData[(data as ChildPannelData).parentIndex].childList[data.index].date= dayjs().format("YYYY-MM-DD");
+                                    listData[(data as ChildPannelData).parentIndex].childList[data.index].writer= figma.activeUsers[0].name;
                                 } else {
                                     listData[data.index].content = textData;
+                                    listData[data.index].date= dayjs().format("YYYY-MM-DD");
+                                    listData[data.index].writer= figma.activeUsers[0].name;
                                 }
 
-                                // TODO : 포인터 데이터 업데이트
-                                // data.pointerList.forEach((nodeId) => {
-                                //     const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
-                                //     if (widgetNode !== null) {
-                                //         let defaultData = {
-                                //             ...(widgetNode.widgetSyncedState["pointerData"] as PointerData),
-                                //             content: textData,
-                                //         };
-                                //         widgetNode.setWidgetSyncedState({
-                                //             widgetMode: "pointer",
-                                //             pointerData: defaultData,
-                                //             arrowType: widgetNode.widgetSyncedState["arrowType"],
-                                //         });
-                                //     }
-                                // });
+                                data.pointerList.forEach((nodeId, i) => {
+                                    const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+
+                                    if (widgetNode !== null) {
+                                        let defaultData = {
+                                            ...(widgetNode.widgetSyncedState["pointerData"] as PointerData),
+                                            content: textData,
+                                        };
+
+                                        widgetNode.setWidgetSyncedState({
+                                            widgetMode: "pointer",
+                                            pointerData: defaultData,
+                                            arrowType: widgetNode.widgetSyncedState["arrowType"],
+                                        });
+                                    } else {
+                                        if (isChild === true) {
+                                            listData[(data as ChildPannelData).parentIndex].childList[data.index].pointerList.splice(i, 1);
+                                        } else {
+                                            listData[data.index].pointerList.splice(i, 1);
+                                        }
+                                    }
+                                });
 
                                 widgetData[type] = listData;
                                 setWidgetData(widgetData);
@@ -340,13 +351,15 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                         key={i}
                     >
                         <SVG
-                            src={`<svg width="${Math.round(18 * getScale(widgetOption.fontSize))}" height="${Math.round(18 * getScale(widgetOption.fontSize))}" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.8146 10.53L5.81684 10.5261L5.96902 10.2625C6.12435 9.99347 6.03217 9.64945 5.76313 9.49412C5.49409 9.33879 5.15007 9.43097 4.99474 9.70001L4.8403 9.9675L4.83785 9.97179C3.91687 11.5723 4.46399 13.6096 6.06371 14.5332C7.66486 15.4577 9.70503 14.911 10.6295 13.3099L10.6338 13.3022L10.6347 13.3006L11.3941 11.9853C11.3967 11.9811 11.3992 11.9768 11.4017 11.9724C12.2397 10.521 11.7428 8.66652 10.2914 7.82858C10.0224 7.67325 9.67836 7.76543 9.52303 8.03447C9.3677 8.30351 9.45988 8.64753 9.72892 8.80286C10.6384 9.32795 10.9521 10.4869 10.434 11.3985C10.4328 11.4004 10.4317 11.4023 10.4305 11.4043C10.4294 11.4061 10.4283 11.408 10.4272 11.4099L9.65506 12.7474L9.65039 12.7556C9.03441 13.8123 7.68652 14.1711 6.62621 13.559C5.56314 12.9452 5.20084 11.5931 5.8146 10.53ZM6.8481 6.49011C6.84636 6.49313 6.84465 6.49617 6.84296 6.49921C6.01232 7.94921 6.51019 9.79775 7.95852 10.6339C8.22755 10.7893 8.57157 10.6971 8.7269 10.4281C8.88223 10.159 8.79005 9.815 8.52102 9.65967C7.60774 9.13239 7.29518 7.9659 7.82246 7.05263L7.82711 7.04443L8.59238 5.71895L8.59458 5.71515C9.20835 4.65208 10.5605 4.28978 11.6235 4.90354C12.6835 5.51549 13.0468 6.86144 12.4406 7.92306C12.4394 7.92496 12.4383 7.92687 12.4372 7.92879C12.4364 7.93003 12.4357 7.93127 12.435 7.93251L12.2806 8.2C12.1252 8.46904 12.2174 8.81306 12.4865 8.96839C12.7555 9.12372 13.0995 9.03154 13.2548 8.7625L13.4032 8.50556L13.4047 8.50298L13.4094 8.49501C14.3339 6.89386 13.7872 4.85369 12.186 3.92927C10.5863 3.00564 8.54826 3.55056 7.62271 5.1485L7.62029 5.15265L6.8481 6.49011Z" fill="#5176F8"/></svg>`}
+                            src={`<svg width="${Math.round(18 * getScale(widgetOption.fontSize))}" height="${Math.round(
+                                18 * getScale(widgetOption.fontSize)
+                            )}" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.8146 10.53L5.81684 10.5261L5.96902 10.2625C6.12435 9.99347 6.03217 9.64945 5.76313 9.49412C5.49409 9.33879 5.15007 9.43097 4.99474 9.70001L4.8403 9.9675L4.83785 9.97179C3.91687 11.5723 4.46399 13.6096 6.06371 14.5332C7.66486 15.4577 9.70503 14.911 10.6295 13.3099L10.6338 13.3022L10.6347 13.3006L11.3941 11.9853C11.3967 11.9811 11.3992 11.9768 11.4017 11.9724C12.2397 10.521 11.7428 8.66652 10.2914 7.82858C10.0224 7.67325 9.67836 7.76543 9.52303 8.03447C9.3677 8.30351 9.45988 8.64753 9.72892 8.80286C10.6384 9.32795 10.9521 10.4869 10.434 11.3985C10.4328 11.4004 10.4317 11.4023 10.4305 11.4043C10.4294 11.4061 10.4283 11.408 10.4272 11.4099L9.65506 12.7474L9.65039 12.7556C9.03441 13.8123 7.68652 14.1711 6.62621 13.559C5.56314 12.9452 5.20084 11.5931 5.8146 10.53ZM6.8481 6.49011C6.84636 6.49313 6.84465 6.49617 6.84296 6.49921C6.01232 7.94921 6.51019 9.79775 7.95852 10.6339C8.22755 10.7893 8.57157 10.6971 8.7269 10.4281C8.88223 10.159 8.79005 9.815 8.52102 9.65967C7.60774 9.13239 7.29518 7.9659 7.82246 7.05263L7.82711 7.04443L8.59238 5.71895L8.59458 5.71515C9.20835 4.65208 10.5605 4.28978 11.6235 4.90354C12.6835 5.51549 13.0468 6.86144 12.4406 7.92306C12.4394 7.92496 12.4383 7.92687 12.4372 7.92879C12.4364 7.93003 12.4357 7.93127 12.435 7.93251L12.2806 8.2C12.1252 8.46904 12.2174 8.81306 12.4865 8.96839C12.7555 9.12372 13.0995 9.03154 13.2548 8.7625L13.4032 8.50556L13.4047 8.50298L13.4094 8.49501C14.3339 6.89386 13.7872 4.85369 12.186 3.92927C10.5863 3.00564 8.54826 3.55056 7.62271 5.1485L7.62029 5.15265L6.8481 6.49011Z" fill="#5176F8"/></svg>`}
                         ></SVG>
-                        <Text fill="#4092C7" fontFamily="Inter" fontWeight={700} textDecoration="underline" fontSize={widgetOption.fontSize}>
+                        <Text fill="#5176F8" fontFamily="Inter" fontWeight={700} textDecoration="underline" fontSize={widgetOption.fontSize}>
                             {item.name}
                         </Text>
                         {data.showUrl === true ? (
-                            <Text fill="#4092C7" fontFamily="Inter" textDecoration="underline" fontSize={widgetOption.fontSize}>
+                            <Text fill="#5176F8" fontFamily="Inter" textDecoration="underline" fontSize={widgetOption.fontSize}>
                                 - {item.value}
                             </Text>
                         ) : null}
@@ -355,7 +368,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
             });
 
             return (
-                <AutoLayout name="link-list" wrap={true} width="fill-parent" spacing={Math.round(4 * getScale(widgetOption.fontSize))}>
+                <AutoLayout name="link-list" wrap={!data.showUrl} direction={data.showUrl ? "vertical" : "horizontal"} width="fill-parent" spacing={Math.round(4 * getScale(widgetOption.fontSize))}>
                     {listStructure}
                 </AutoLayout>
             );
@@ -425,7 +438,7 @@ export function getMenuStructure({ menuData, setMenuData, widgetData, widgetOpti
             </AutoLayout>
         );
 
-        // 포인트 생성 버튼
+        // 포인터 생성 버튼
         menuList.push(
             <AutoLayout
                 name="btn"
@@ -830,39 +843,31 @@ export function getMenuStructure({ menuData, setMenuData, widgetData, widgetOpti
 export function makePointerStructure(pointerData: PointerData, arrowType: string) {
     const structure = [];
     let isVertical = false;
-    let bgColor = "";
-
-    switch (pointerData.type) {
-        case "visible":
-            bgColor = "#6436EA";
-            break;
-        case "invisible":
-            bgColor = "#F66134";
-            break;
-        case "tracking":
-            bgColor = "#47B6FE";
-            break;
-        case "design":
-            bgColor = "#38C66B";
-            break;
-    }
 
     if (arrowType === "top" || arrowType === "bottom") {
         isVertical = true;
     }
 
     if (arrowType === "top") {
-        const arrow = `<svg viewBox="0 0 14 7" fill="none">
-            <path d="M7 0 14 7 0 7Z7 0" fill="${bgColor}" />
-        </svg>`;
-        structure.push(<SVG src={arrow} key="arrow"></SVG>);
+        structure.push(
+            <SVG
+                src={`<svg viewBox="0 0 14 7" fill="none">
+                <path d="M7 0 14 7 0 7Z7 0" fill="${pointerData.bgColor}" />
+            </svg>`}
+                key="arrow"
+            ></SVG>
+        );
     }
 
     if (arrowType === "left") {
-        const arrow = `<svg viewBox="0 0 7 14" fill="none">
-            <path d="M7 0 7 14 0 7Z7 0" fill="${bgColor}" />
-        </svg>`;
-        structure.push(<SVG src={arrow} key="arrow"></SVG>);
+        structure.push(
+            <SVG
+                src={`<svg viewBox="0 0 7 14" fill="none">
+            <path d="M7 0 7 14 0 7Z7 0" fill="${pointerData.bgColor}" />
+        </svg>`}
+                key="arrow"
+            ></SVG>
+        );
     }
 
     // 포인터
@@ -870,7 +875,7 @@ export function makePointerStructure(pointerData: PointerData, arrowType: string
         <AutoLayout
             name="pointer"
             height={28}
-            fill={bgColor}
+            fill={pointerData.bgColor}
             padding={{
                 horizontal: 10,
                 vertical: 0,
@@ -880,29 +885,37 @@ export function makePointerStructure(pointerData: PointerData, arrowType: string
             verticalAlignItems={"center"}
             onClick={(e) => {
                 return new Promise((resolve) => {
-                    openViewModal(pointerData.viewText, pointerData.type, pointerData.content, pointerData.linkList);
+                    openViewModal(pointerData.viewText, pointerData.type, pointerData.content, pointerData.linkList, pointerData.bgColor, pointerData.textColor);
                 });
             }}
             key="pointer"
         >
-            <Text name="number" fill={"#fff"} fontSize={16} fontWeight={700}>
+            <Text name="number" fill={pointerData.textColor} fontSize={16} fontWeight={700}>
                 {pointerData.viewText}
             </Text>
         </AutoLayout>
     );
 
     if (arrowType === "right") {
-        const arrow = `<svg viewBox="0 0 7 14" fill="none">
-            <path d="M0 0 7 7 0 14Z0 0" fill="${bgColor}" />
-        </svg>`;
-        structure.push(<SVG src={arrow} key="arrow"></SVG>);
+        structure.push(
+            <SVG
+                src={`<svg viewBox="0 0 7 14" fill="none">
+            <path d="M0 0 7 7 0 14Z0 0" fill="${pointerData.bgColor}" />
+        </svg>`}
+                key="arrow"
+            ></SVG>
+        );
     }
 
     if (arrowType === "bottom") {
-        const arrow = `<svg viewBox="0 0 14 7" fill="none">
-            <path d="M0 0 7 7 14 0Z0 0" fill="${bgColor}" />
-        </svg>`;
-        structure.push(<SVG src={arrow} key="arrow"></SVG>);
+        structure.push(
+            <SVG
+                src={`<svg viewBox="0 0 14 7" fill="none">
+            <path d="M0 0 7 7 14 0Z0 0" fill="${pointerData.bgColor}" />
+        </svg>`}
+                key="arrow"
+            ></SVG>
+        );
     }
 
     return (
