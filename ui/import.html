@@ -1,6 +1,6 @@
 <div class="box">
     <p class="title">Import</p>
-    <textarea class="textarea"></textarea>
+    <input class="file" type="file" accept=".json" />
     <div class="btn-area">
         <button class="btn btn-cancel --cancel">Cancel</button>
         <button class="btn btn-save">Import</button>
@@ -21,20 +21,25 @@
     });
 
     document.querySelector(".btn-save").addEventListener("click", function () {
-        const data = document.querySelector(".textarea").value;
+        const $input = document.querySelector(".file");
 
         try {
-            const jsonData = JSON.parse(data);
+            const file = $input.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const json = JSON.parse(e.target.result);
 
-            parent.postMessage(
-                {
-                    pluginMessage: {
-                        type: "importData",
-                        data: jsonData,
+                parent.postMessage(
+                    {
+                        pluginMessage: {
+                            type: "importData",
+                            data: json,
+                        },
                     },
-                },
-                "*"
-            );
+                    "*"
+                );
+            };
+            reader.readAsText(file);
         } catch (error) {
             parent.postMessage(
                 {

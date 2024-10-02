@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, arrangementWidgetData } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, arrangementWidgetData, setImportData } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -183,11 +183,11 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
-                //     // 데이터 불러오기
-                //     if (msg.type === "importData") {
-                //         setImportData({ data: data, setVisibleList: setVisibleList, setInvisibleList: setInvisibleList, setTrackingList: setTrackingList, setDesignList: setDesignList });
-                //         figma.closePlugin();
-                //     }
+                // 데이터 불러오기
+                if (msg.type === "importData") {
+                    setImportData({ data: data, setWidgetData: setWidgetData, setWidgetOption: setWidgetOption });
+                    figma.closePlugin();
+                }
 
                 // 메세지 표기
                 if (msg.type === "message") {
@@ -221,6 +221,9 @@ function plannerWidget() {
                     options: [{ option: "", label: "Add New" }, ...addOptions],
                 },
                 {
+                    itemType: "separator",
+                },
+                {
                     itemType: "action",
                     propertyName: "setting",
                     tooltip: "Setting",
@@ -248,7 +251,7 @@ function plannerWidget() {
                 {
                     itemType: "action",
                     propertyName: "clone",
-                    tooltip: "New Widget",
+                    tooltip: "Clone Widget",
                 },
             ],
             ({ propertyName, propertyValue }) => {
@@ -264,6 +267,7 @@ function plannerWidget() {
                     }
                 }
 
+                // 설정
                 if (propertyName === "setting") {
                     if (figma.payments?.status.type === "UNPAID") {
                         figma.payments?.initiateCheckoutAsync();
@@ -275,6 +279,7 @@ function plannerWidget() {
                     }
                 }
 
+                // 전체 완료 적용
                 if (propertyName === "complete") {
                     setAllPannelCompleteStatus({
                         status: true,
@@ -283,6 +288,7 @@ function plannerWidget() {
                     });
                 }
 
+                // 전체 미완료 적용
                 if (propertyName === "unComplete") {
                     setAllPannelCompleteStatus({
                         status: false,
@@ -291,16 +297,45 @@ function plannerWidget() {
                     });
                 }
 
-                // if (propertyName === "export") {
-                //     return new Promise((resolve) => {
-                //         dataExport({ widgetTitle: widgetTitle, visibleList: visibleList, invisibleList: invisibleList, trackingList: trackingList, designList: designList });
-                //     });
-                // }
-                // if (propertyName === "import") {
-                //     return new Promise((resolve) => {
-                //         figma.showUI(__uiFiles__.import, { width: 400, height: 300 });
-                //     });
-                // }
+                // 데이터 내보내기
+                if (propertyName === "export") {
+                    let jsonData = JSON.stringify({
+                        setting: widgetOption,
+                        descriptionData: widgetData,
+                    });
+
+                    return new Promise((resolve) => {
+                        figma.showUI(`
+                            <script>
+                                window.onmessage = (event) => {
+                                    const data = event.data.pluginMessage;
+                                    const link = document.createElement("a");
+                                    const file = new Blob([data.content], { type: "text/plain" });
+
+                                    link.href = URL.createObjectURL(file);
+                                    link.download = data.title;
+                                    document.body.appendChild(link);
+                                    link.click();
+    
+                                    parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+                                };
+                            </script>
+                        `);
+
+                        let fileName = widgetTitle ? widgetTitle : "Description Panel";
+                        figma.ui.postMessage({
+                            title: fileName + ".json",
+                            content: jsonData,
+                        });
+                    });
+                }
+
+                // 데이터 들여오기
+                if (propertyName === "import") {
+                    return new Promise((resolve) => {
+                        figma.showUI(__uiFiles__.import, { width: 400, height: 180 });
+                    });
+                }
 
                 if (propertyName === "clone") {
                     const widgetNode = figma.getNodeById(widgetId) as WidgetNode;

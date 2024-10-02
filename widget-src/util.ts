@@ -113,23 +113,27 @@ export function openViewModal(viewNumber: string, pannelType: string, content: s
 
 // 자식 패널 정보 추가 함수
 export function addChildPannelData({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: AddChildPannelArgument }) {
-    const tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
+    if (figma.payments?.status.type === "PAID") {
+        const tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
 
-    tempData[data.pannelType][data.pannelData.index].childList.push({
-        code: setPanelCode(),
-        index: tempData[data.pannelType][data.pannelData.index].childList.length,
-        complete: false,
-        content: "",
-        linkList: [],
-        pointerList: [],
-        parentIndex: data.pannelData.index,
-        parentCode: data.pannelData.code,
-        date: dayjs().format("YYYY-MM-DD"),
-        showUrl: false,
-        writer: figma.activeUsers[0].name,
-    });
+        tempData[data.pannelType][data.pannelData.index].childList.push({
+            code: setPanelCode(),
+            index: tempData[data.pannelType][data.pannelData.index].childList.length,
+            complete: false,
+            content: "",
+            linkList: [],
+            pointerList: [],
+            parentIndex: data.pannelData.index,
+            parentCode: data.pannelData.code,
+            date: dayjs().format("YYYY-MM-DD"),
+            showUrl: false,
+            writer: figma.activeUsers[0].name,
+        });
 
-    setWidgetData(tempData);
+        setWidgetData(tempData);
+    } else {
+        figma.payments?.initiateCheckoutAsync();
+    }
 }
 
 // 포인터 생성 함수
@@ -422,21 +426,123 @@ function clearPointerList(list: PannelData[]) {
 }
 
 // 데이터 불러오기
-export function setImportData({ data, setVisibleList, setInvisibleList, setTrackingList, setDesignList }: { data: any; setVisibleList: Function; setInvisibleList: Function; setTrackingList: Function; setDesignList: Function }) {
-    if (data.visibleList !== undefined) {
-        setVisibleList(data.visibleList);
+export function setImportData({ data, setWidgetData, setWidgetOption }: { data: any; setWidgetData: Function; setWidgetOption: Function }) {
+    let sutable: boolean = true;
+
+    if (data.setting === undefined) {
+        sutable = false;
+    } else {
+        if (data.setting.fontSize === undefined) {
+            sutable = false;
+        } else {
+            if (typeof data.setting.fontSize === "number") {
+                if (data.setting.fontSize > 30) {
+                    data.setting.fontSize = 30;
+                }
+
+                if (data.setting.fontSize < 12) {
+                    data.setting.fontSize = 12;
+                }
+            } else {
+                sutable = false;
+            }
+        }
+
+        if (data.setting.panelList === undefined) {
+            sutable = false;
+        } else {
+            if (Array.isArray(data.setting.panelList) === false) {
+                sutable = false;
+            } else {
+                data.setting.panelList.forEach((item: any) => {
+                    if (item.name === undefined) {
+                        sutable = false;
+                    } else {
+                        if (typeof item.name !== "string") {
+                            sutable = false;
+                        }
+                    }
+
+                    if (item.code === undefined) {
+                        sutable = false;
+                    } else {
+                        if (typeof item.code !== "string") {
+                            sutable = false;
+                        }
+                    }
+
+                    if (item.bgColor === undefined) {
+                        sutable = false;
+                    } else {
+                        if (typeof item.bgColor !== "string") {
+                            sutable = false;
+                        }
+                    }
+
+                    if (item.textColor === undefined) {
+                        sutable = false;
+                    } else {
+                        if (typeof item.textColor !== "string") {
+                            sutable = false;
+                        }
+                    }
+                });
+            }
+        }
     }
 
-    if (data.invisibleList !== undefined) {
-        setInvisibleList(data.invisibleList);
+    if (data.descriptionData === undefined) {
+        sutable = false;
+    } else {
+        if (typeof data.descriptionData === "object" && Array.isArray(data.descriptionData) === false) {
+        } else {
+            sutable = false;
+        }
     }
 
-    if (data.trackingList !== undefined) {
-        setTrackingList(data.trackingList);
-    }
+    if (sutable === true) {
+        if (data.setting.fontSize !== 14) {
+            data.setting.isChanged = true;
+        }
 
-    if (data.designList !== undefined) {
-        setDesignList(data.designList);
+        if (
+            JSON.stringify(data.setting.panelList) !==
+            JSON.stringify([
+                {
+                    name: "Visible",
+                    code: "a",
+                    bgColor: "#f0ebfd",
+                    textColor: "#6436ea",
+                },
+                {
+                    name: "Invisible",
+                    code: "b",
+                    bgColor: "#ffefea",
+                    textColor: "#f66134",
+                },
+                {
+                    name: "Tracking",
+                    code: "c",
+                    bgColor: "#ecf7ff",
+                    textColor: "#47b6fe",
+                },
+                {
+                    name: "Design",
+                    code: "d",
+                    bgColor: "#e9faef",
+                    textColor: "#38c66b",
+                },
+            ])
+        ) {
+            data.setting.isChanged = true;
+        }
+
+        setWidgetOption(data.setting);
+        setWidgetData(data.descriptionData);
+    } else {
+        figma.notify("This file is not Description Panel Export file.", {
+            error: true,
+        });
     }
 }
 
