@@ -1,5 +1,6 @@
 import "./type.d.ts";
 import { isEmptyList, openViewModal, goToNumber, openLinkEditModal, getMenuPosition, getScale } from "./util";
+// @ts-ignore
 import dayjs from "dayjs";
 
 const { widget } = figma;
@@ -247,12 +248,12 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
 
                                 if (isChild === true) {
                                     listData[(data as ChildPannelData).parentIndex].childList[data.index].content = textData;
-                                    listData[(data as ChildPannelData).parentIndex].childList[data.index].date= dayjs().format("YYYY-MM-DD");
-                                    listData[(data as ChildPannelData).parentIndex].childList[data.index].writer= figma.activeUsers[0].name;
+                                    listData[(data as ChildPannelData).parentIndex].childList[data.index].date = dayjs().format("YYYY-MM-DD");
+                                    listData[(data as ChildPannelData).parentIndex].childList[data.index].writer = figma.activeUsers[0].name;
                                 } else {
                                     listData[data.index].content = textData;
-                                    listData[data.index].date= dayjs().format("YYYY-MM-DD");
-                                    listData[data.index].writer= figma.activeUsers[0].name;
+                                    listData[data.index].date = dayjs().format("YYYY-MM-DD");
+                                    listData[data.index].writer = figma.activeUsers[0].name;
                                 }
 
                                 data.pointerList.forEach((nodeId, i) => {
@@ -368,7 +369,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
             });
 
             return (
-                <AutoLayout name="link-list" wrap={!data.showUrl} direction={data.showUrl ? "vertical" : "horizontal"} width="fill-parent" spacing={Math.round(4 * getScale(widgetOption.fontSize))}>
+                <AutoLayout name="link-list" wrap={!data.showUrl} direction={data.showUrl ? "vertical" : "horizontal"} width="fill-parent" spacing={Math.round(4 * getScale(widgetOption.fontSize))} opacity={data.complete ? 0.3 : 1}>
                     {listStructure}
                 </AutoLayout>
             );

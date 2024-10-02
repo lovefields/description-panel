@@ -45,10 +45,6 @@ interface GetPannelStructure extends PannelArgument {
     type: string;
 }
 
-interface CompletePannelArgument extends PannelArgument {
-    status: boolean;
-}
-
 interface AddChildPannelArgument {
     pannelType: string;
     pannelData: PannelData;
@@ -79,12 +75,10 @@ interface MovePannelArgument extends PannelArgument {
     move: string;
 }
 
-interface CompletePinterArgument extends PannelArgument {
-    data: {
-        pannelType: string;
-        isChild: boolean;
-        pannelData: PannelData | ChildPannelData;
-    };
+interface CompletePinterArgument {
+    pannelType: string;
+    isChild: boolean;
+    pannelData: PannelData | ChildPannelData;
 }
 
 interface MenuData {

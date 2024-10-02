@@ -1,4 +1,5 @@
 import "./type.d.ts";
+// @ts-ignore
 import dayjs from "dayjs";
 
 export function setPanelCode() {
@@ -191,60 +192,31 @@ export function goToNumber(list: string[]) {
 }
 
 // 패널 완료 토글
-export function setPannelComplete({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data }: CompletePinterArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+export function setPannelComplete({ widgetData, setWidgetData, data }: { widgetData: WidgetData; setWidgetData: Function; data: CompletePinterArgument }) {
+    const tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
 
     if (data.isChild === true) {
-        const pannelData = data.pannelData as ChildPannelData;
-
-        targetValue[pannelData.parentIndex].childList[pannelData.index].complete = !pannelData.complete;
+        tempData[data.pannelType][(data.pannelData as ChildPannelData).parentIndex].childList[data.pannelData.index].complete = !data.pannelData.complete;
     } else {
-        const pannelData = data.pannelData as PannelData;
-
-        targetValue[pannelData.index].complete = !pannelData.complete;
+        tempData[data.pannelType][data.pannelData.index].complete = !data.pannelData.complete;
     }
 
-    targetFunction(targetValue);
+    setWidgetData(tempData);
 }
 
 // 전채 패널 상태 변경
-export function setAllPannelCompleteStatus({ status, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList }: CompletePannelArgument) {
-    visibleList.forEach((item) => {
-        item.complete = status;
+export function setAllPannelCompleteStatus({ status, widgetData, setWidgetData }: { status: boolean; widgetData: WidgetData; setWidgetData: Function }) {
+    for (let [key, value] of Object.entries(widgetData)) {
+        value.forEach((item, i) => {
+            widgetData[key][i].complete = status;
 
-        item.childList.forEach((child) => {
-            child.complete = status;
+            item.childList.forEach((child, j) => {
+                widgetData[key][i].childList[j].complete = status;
+            });
         });
-    });
+    }
 
-    invisibleList.forEach((item) => {
-        item.complete = status;
-
-        item.childList.forEach((child) => {
-            child.complete = status;
-        });
-    });
-
-    trackingList.forEach((item) => {
-        item.complete = status;
-
-        item.childList.forEach((child) => {
-            child.complete = status;
-        });
-    });
-
-    designList.forEach((item) => {
-        item.complete = status;
-
-        item.childList.forEach((child) => {
-            child.complete = status;
-        });
-    });
-
-    setVisibleList(visibleList);
-    setInvisibleList(invisibleList);
-    setTrackingList(trackingList);
-    setDesignList(designList);
+    setWidgetData(widgetData);
 }
 
 // 패널 순서 이동
@@ -562,7 +534,7 @@ export function setLinkData({ widgetData, setWidgetData, widgetOption, data }: {
     if (data.pannelData.isChild === true) {
         // 자식의 경우
         widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
-        
+
         widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId, i) => {
             const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
 

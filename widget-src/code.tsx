@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -124,21 +124,15 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
-                //     // 완료 설정
-                //     if (msg.type === "complete") {
-                //         setPannelComplete({
-                //             visibleList: visibleList,
-                //             invisibleList: invisibleList,
-                //             trackingList: trackingList,
-                //             designList: designList,
-                //             setVisibleList: setVisibleList,
-                //             setInvisibleList: setInvisibleList,
-                //             setTrackingList: setTrackingList,
-                //             setDesignList: setDesignList,
-                //             data: data,
-                //         });
-                //         figma.closePlugin();
-                //     }
+                // 완료 설정
+                if (msg.type === "complete") {
+                    setPannelComplete({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        data: data,
+                    });
+                    figma.closePlugin();
+                }
 
                 //     // 순서 올리기
                 //     if (msg.type === "listUp") {
@@ -282,33 +276,22 @@ function plannerWidget() {
                     }
                 }
 
-                // if (propertyName === "complete") {
-                //     setAllPannelCompleteStatus({
-                //         status: true,
-                //         visibleList: visibleList,
-                //         invisibleList: invisibleList,
-                //         trackingList: trackingList,
-                //         designList: designList,
-                //         setVisibleList: setVisibleList,
-                //         setInvisibleList: setInvisibleList,
-                //         setTrackingList: setTrackingList,
-                //         setDesignList: setDesignList,
-                //     });
-                // }
+                if (propertyName === "complete") {
+                    setAllPannelCompleteStatus({
+                        status: true,
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                    });
+                }
 
-                // if (propertyName === "unComplete") {
-                //     setAllPannelCompleteStatus({
-                //         status: false,
-                //         visibleList: visibleList,
-                //         invisibleList: invisibleList,
-                //         trackingList: trackingList,
-                //         designList: designList,
-                //         setVisibleList: setVisibleList,
-                //         setInvisibleList: setInvisibleList,
-                //         setTrackingList: setTrackingList,
-                //         setDesignList: setDesignList,
-                //     });
-                // }
+                if (propertyName === "unComplete") {
+                    setAllPannelCompleteStatus({
+                        status: false,
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                    });
+                }
+
                 // if (propertyName === "export") {
                 //     return new Promise((resolve) => {
                 //         dataExport({ widgetTitle: widgetTitle, visibleList: visibleList, invisibleList: invisibleList, trackingList: trackingList, designList: designList });
