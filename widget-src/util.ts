@@ -220,8 +220,7 @@ export function setAllPannelCompleteStatus({ status, widgetData, setWidgetData }
 }
 
 // 패널 순서 이동
-export function movePannelItem({ visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList, data, move }: MovePannelArgument) {
-    let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+export function movePannelItem({ widgetData, setWidgetData, data, move }: { widgetData: WidgetData; setWidgetData: Function; data: MovePannelArgument; move: "up" | "down" }) {
     let suitable = true;
 
     if (data.pannelData.index === 0 && move === "up") {
@@ -231,12 +230,12 @@ export function movePannelItem({ visibleList, invisibleList, trackingList, desig
 
     if (move === "down") {
         if (data.isChild === true) {
-            if (data.pannelData.index === targetValue[(data.pannelData as ChildPannelData).parentIndex].childList.length - 1) {
+            if (data.pannelData.index === widgetData[data.pannelType][(data.pannelData as ChildPannelData).parentIndex].childList.length - 1) {
                 figma.notify("Panel is already the last item.");
                 suitable = false;
             }
         } else {
-            if (data.pannelData.index === targetValue.length - 1) {
+            if (data.pannelData.index === widgetData[data.pannelType].length - 1) {
                 figma.notify("Panel is already the last item.");
                 suitable = false;
             }
@@ -248,43 +247,39 @@ export function movePannelItem({ visibleList, invisibleList, trackingList, desig
             const childData = data.pannelData as ChildPannelData;
 
             if (move === "up") {
-                let preData = targetValue[childData.parentIndex].childList[childData.index - 1];
-                let curruntData = targetValue[childData.parentIndex].childList[childData.index];
+                let preData = widgetData[data.pannelType][childData.parentIndex].childList[childData.index - 1];
+                let curruntData = widgetData[data.pannelType][childData.parentIndex].childList[childData.index];
 
-                targetValue[childData.parentIndex].childList[childData.index - 1] = curruntData;
-                targetValue[childData.parentIndex].childList[childData.index] = preData;
-
-                targetValue[childData.parentIndex].childList = arrangementChildPannel(targetValue[childData.parentIndex]);
+                widgetData[data.pannelType][childData.parentIndex].childList[childData.index - 1] = curruntData;
+                widgetData[data.pannelType][childData.parentIndex].childList[childData.index] = preData;
+                widgetData[data.pannelType][childData.parentIndex].childList = arrangementChildPannel(widgetData[data.pannelType][childData.parentIndex]);
             } else {
-                let nextData = targetValue[childData.parentIndex].childList[childData.index + 1];
-                let curruntData = targetValue[childData.parentIndex].childList[childData.index];
+                let nextData = widgetData[data.pannelType][childData.parentIndex].childList[childData.index + 1];
+                let curruntData = widgetData[data.pannelType][childData.parentIndex].childList[childData.index];
 
-                targetValue[childData.parentIndex].childList[childData.index + 1] = curruntData;
-                targetValue[childData.parentIndex].childList[childData.index] = nextData;
-
-                targetValue[childData.parentIndex].childList = arrangementChildPannel(targetValue[childData.parentIndex]);
+                widgetData[data.pannelType][childData.parentIndex].childList[childData.index + 1] = curruntData;
+                widgetData[data.pannelType][childData.parentIndex].childList[childData.index] = nextData;
+                widgetData[data.pannelType][childData.parentIndex].childList = arrangementChildPannel(widgetData[data.pannelType][childData.parentIndex]);
             }
         } else {
             if (move === "up") {
-                let preData = targetValue[data.pannelData.index - 1];
-                let curruntData = targetValue[data.pannelData.index];
+                let preData = widgetData[data.pannelType][data.pannelData.index - 1];
+                let curruntData = widgetData[data.pannelType][data.pannelData.index];
 
-                targetValue[data.pannelData.index - 1] = curruntData;
-                targetValue[data.pannelData.index] = preData;
-
-                targetValue = arrangementPannel(targetValue);
+                widgetData[data.pannelType][data.pannelData.index - 1] = curruntData;
+                widgetData[data.pannelType][data.pannelData.index] = preData;
+                widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType]);
             } else {
-                let nextData = targetValue[data.pannelData.index + 1];
-                let curruntData = targetValue[data.pannelData.index];
+                let nextData = widgetData[data.pannelType][data.pannelData.index + 1];
+                let curruntData = widgetData[data.pannelType][data.pannelData.index];
 
-                targetValue[data.pannelData.index + 1] = curruntData;
-                targetValue[data.pannelData.index] = nextData;
-
-                targetValue = arrangementPannel(targetValue);
+                widgetData[data.pannelType][data.pannelData.index + 1] = curruntData;
+                widgetData[data.pannelType][data.pannelData.index] = nextData;
+                widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType]);
             }
         }
 
-        targetFunction(targetValue);
+        setWidgetData(widgetData);
     }
 }
 

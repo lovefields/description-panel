@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -134,39 +134,27 @@ function plannerWidget() {
                     figma.closePlugin();
                 }
 
-                //     // 순서 올리기
-                //     if (msg.type === "listUp") {
-                //         movePannelItem({
-                //             visibleList: visibleList,
-                //             invisibleList: invisibleList,
-                //             trackingList: trackingList,
-                //             designList: designList,
-                //             setVisibleList: setVisibleList,
-                //             setInvisibleList: setInvisibleList,
-                //             setTrackingList: setTrackingList,
-                //             setDesignList: setDesignList,
-                //             data: data,
-                //             move: "up",
-                //         });
-                //         figma.closePlugin();
-                //     }
+                // 순서 올리기
+                if (msg.type === "listUp") {
+                    movePannelItem({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        data: data,
+                        move: "up",
+                    });
+                    figma.closePlugin();
+                }
 
-                //     // 순서 내기리
-                //     if (msg.type === "listDown") {
-                //         movePannelItem({
-                //             visibleList: visibleList,
-                //             invisibleList: invisibleList,
-                //             trackingList: trackingList,
-                //             designList: designList,
-                //             setVisibleList: setVisibleList,
-                //             setInvisibleList: setInvisibleList,
-                //             setTrackingList: setTrackingList,
-                //             setDesignList: setDesignList,
-                //             data: data,
-                //             move: "down",
-                //         });
-                //         figma.closePlugin();
-                //     }
+                // 순서 내기리
+                if (msg.type === "listDown") {
+                    movePannelItem({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        data: data,
+                        move: "down",
+                    });
+                    figma.closePlugin();
+                }
 
                 //     // 삭제
                 //     if (msg.type === "deletePannel") {

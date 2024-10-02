@@ -34,7 +34,6 @@
         const $linkArea = document.querySelector(".link-list-area");
         const viewData = event.data.pluginMessage;
 
-        console.log("viewData", viewData);
         document.querySelector(".top-info-area .number").textContent = viewData.viewNumber;
         document.querySelector(".top-info-area .number").style.background = viewData.bgColor;
         document.querySelector(".top-info-area .number").style.color = viewData.textColor;

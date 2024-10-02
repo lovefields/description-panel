@@ -66,13 +66,10 @@ interface CreatePinterArgument {
     pannelData: PannelData | ChildPannelData;
 }
 
-interface MovePannelArgument extends PannelArgument {
-    data: {
-        pannelType: string;
-        isChild: boolean;
-        pannelData: PannelData | ChildPannelData;
-    };
-    move: string;
+interface MovePannelArgument {
+    pannelType: string;
+    isChild: boolean;
+    pannelData: PannelData | ChildPannelData;
 }
 
 interface CompletePinterArgument {
