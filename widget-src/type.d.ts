@@ -106,12 +106,14 @@ interface PointerData {
 interface WidgetOption {
     fontSize: number;
     isChanged: boolean;
-    panelList: {
-        name: string;
-        code: string;
-        bgColor: string;
-        textColor: string;
-    }[];
+    panelList: PannelOption[];
+}
+
+interface PannelOption {
+    name: string;
+    code: string;
+    bgColor: string;
+    textColor: string;
 }
 
 interface WidgetData {

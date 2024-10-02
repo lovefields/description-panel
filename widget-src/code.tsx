@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, arrangementWidgetData } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -44,12 +44,7 @@ function plannerWidget() {
                 },
             ],
         });
-        const [widgetData, setWidgetData] = useSyncedState<WidgetData>("widgetData", {
-            a: [],
-            b: [],
-            c: [],
-            d: [],
-        });
+        const [widgetData, setWidgetData] = useSyncedState<WidgetData>("widgetData", {});
         const [menuData, setMenuData] = useSyncedState<MenuData>("menuData", {
             active: false,
             x: 0,
@@ -75,6 +70,18 @@ function plannerWidget() {
             // figma.payments?.setPaymentStatusInDevelopment({ type: "UNPAID" });
             console.log("test", figma.payments?.status.type);
 
+            if (Object.keys(widgetData).length === 0) {
+                let tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
+
+                widgetOption.panelList.forEach((item) => {
+                    if (tempData[item.code] === undefined) {
+                        tempData[item.code] = [];
+                    }
+                });
+
+                setWidgetData(tempData);
+            }
+
             figma.ui.onmessage = (msg) => {
                 const data = msg.data;
 
@@ -85,8 +92,15 @@ function plannerWidget() {
                         isChanged: true,
                         panelList: data.panelList,
                     });
-                    // TODO : 데이터 정리
-                    // TODO : 모든 포인터 업데이트
+                    arrangementWidgetData({
+                        widgetData: widgetData,
+                        setWidgetData: setWidgetData,
+                        widgetOption: {
+                            fontSize: data.fontSize,
+                            isChanged: true,
+                            panelList: data.panelList,
+                        },
+                    });
                     figma.closePlugin();
                 }
 
@@ -139,6 +153,7 @@ function plannerWidget() {
                     movePannelItem({
                         widgetData: widgetData,
                         setWidgetData: setWidgetData,
+                        widgetOption: widgetOption,
                         data: data,
                         move: "up",
                     });
@@ -150,6 +165,7 @@ function plannerWidget() {
                     movePannelItem({
                         widgetData: widgetData,
                         setWidgetData: setWidgetData,
+                        widgetOption: widgetOption,
                         data: data,
                         move: "down",
                     });
@@ -161,6 +177,7 @@ function plannerWidget() {
                     deletePannelItem({
                         widgetData: widgetData,
                         setWidgetData: setWidgetData,
+                        widgetOption: widgetOption,
                         data: data,
                     });
                     figma.closePlugin();
@@ -284,24 +301,24 @@ function plannerWidget() {
                 //         figma.showUI(__uiFiles__.import, { width: 400, height: 300 });
                 //     });
                 // }
-                // if (propertyName === "clone") {
-                //     const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
-                //     const parentNode = widgetNode?.parent as BaseNode;
-                //     const cloneWidgetNode = widgetNode.cloneWidget({
-                //         widgetMode: "list",
-                //         widgetTitle: "",
-                //         widgetCaption: "",
-                //         visibleList: [],
-                //         invisibleList: [],
-                //         trackingList: [],
-                //         designList: [],
-                //     });
-                //     cloneWidgetNode.x += widgetNode.width;
-                //     cloneWidgetNode.x += 100;
-                //     if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
-                //         parentNode.appendChild(cloneWidgetNode);
-                //     }
-                // }
+
+                if (propertyName === "clone") {
+                    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+                    const parentNode = widgetNode?.parent as BaseNode;
+                    const cloneWidgetNode = widgetNode.cloneWidget({
+                        widgetMode: "list",
+                        widgetTitle: "",
+                        widgetCaption: "",
+                        widgetData: {},
+                    });
+
+                    cloneWidgetNode.x += widgetNode.width;
+                    cloneWidgetNode.x += 100;
+
+                    if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
+                        parentNode.appendChild(cloneWidgetNode);
+                    }
+                }
             }
         );
 

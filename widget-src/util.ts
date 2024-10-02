@@ -220,7 +220,8 @@ export function setAllPannelCompleteStatus({ status, widgetData, setWidgetData }
 }
 
 // 패널 순서 이동
-export function movePannelItem({ widgetData, setWidgetData, data, move }: { widgetData: WidgetData; setWidgetData: Function; data: MovePannelArgument; move: "up" | "down" }) {
+export function movePannelItem({ widgetData, setWidgetData, widgetOption, data, move }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: MovePannelArgument; move: "up" | "down" }) {
+    const pannelOption = widgetOption.panelList.find((item) => item.code === data.pannelType);
     let suitable = true;
 
     if (data.pannelData.index === 0 && move === "up") {
@@ -242,7 +243,7 @@ export function movePannelItem({ widgetData, setWidgetData, data, move }: { widg
         }
     }
 
-    if (suitable === true) {
+    if (suitable === true && pannelOption !== undefined) {
         if (data.isChild === true) {
             const childData = data.pannelData as ChildPannelData;
 
@@ -252,14 +253,14 @@ export function movePannelItem({ widgetData, setWidgetData, data, move }: { widg
 
                 widgetData[data.pannelType][childData.parentIndex].childList[childData.index - 1] = curruntData;
                 widgetData[data.pannelType][childData.parentIndex].childList[childData.index] = preData;
-                widgetData[data.pannelType][childData.parentIndex].childList = arrangementChildPannel(widgetData[data.pannelType][childData.parentIndex]);
+                widgetData[data.pannelType][childData.parentIndex].childList = arrangementChildPannel(widgetData[data.pannelType][childData.parentIndex], pannelOption);
             } else {
                 let nextData = widgetData[data.pannelType][childData.parentIndex].childList[childData.index + 1];
                 let curruntData = widgetData[data.pannelType][childData.parentIndex].childList[childData.index];
 
                 widgetData[data.pannelType][childData.parentIndex].childList[childData.index + 1] = curruntData;
                 widgetData[data.pannelType][childData.parentIndex].childList[childData.index] = nextData;
-                widgetData[data.pannelType][childData.parentIndex].childList = arrangementChildPannel(widgetData[data.pannelType][childData.parentIndex]);
+                widgetData[data.pannelType][childData.parentIndex].childList = arrangementChildPannel(widgetData[data.pannelType][childData.parentIndex], pannelOption);
             }
         } else {
             if (move === "up") {
@@ -268,14 +269,14 @@ export function movePannelItem({ widgetData, setWidgetData, data, move }: { widg
 
                 widgetData[data.pannelType][data.pannelData.index - 1] = curruntData;
                 widgetData[data.pannelType][data.pannelData.index] = preData;
-                widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType]);
+                widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType], pannelOption);
             } else {
                 let nextData = widgetData[data.pannelType][data.pannelData.index + 1];
                 let curruntData = widgetData[data.pannelType][data.pannelData.index];
 
                 widgetData[data.pannelType][data.pannelData.index + 1] = curruntData;
                 widgetData[data.pannelType][data.pannelData.index] = nextData;
-                widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType]);
+                widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType], pannelOption);
             }
         }
 
@@ -284,10 +285,10 @@ export function movePannelItem({ widgetData, setWidgetData, data, move }: { widg
 }
 
 // 패널 데이터 정리
-function arrangementPannel(list: PannelData[]) {
+function arrangementPannel(list: PannelData[], pannelOption: PannelOption) {
     list.forEach((pannel, index) => {
         pannel.index = index;
-        pannel.childList = arrangementChildPannel(pannel);
+        pannel.childList = arrangementChildPannel(pannel, pannelOption);
         pannel.pointerList.forEach((nodeId) => {
             const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
 
@@ -295,6 +296,8 @@ function arrangementPannel(list: PannelData[]) {
                 let defaultData = widgetNode.widgetSyncedState["pointerData"] as PointerData;
 
                 defaultData.viewText = String(pannel.index + 1);
+                defaultData.bgColor = pannelOption.bgColor;
+                defaultData.textColor = pannelOption.textColor;
 
                 widgetNode.setWidgetSyncedState({
                     widgetMode: "pointer",
@@ -309,7 +312,7 @@ function arrangementPannel(list: PannelData[]) {
 }
 
 // 자식 패널 정리
-function arrangementChildPannel(list: PannelData) {
+function arrangementChildPannel(list: PannelData, pannelOption: PannelOption) {
     list.childList.forEach((child, index) => {
         child.index = index;
         child.parentIndex = list.index;
@@ -321,6 +324,8 @@ function arrangementChildPannel(list: PannelData) {
                 let defaultData = widgetNode.widgetSyncedState["pointerData"] as PointerData;
 
                 defaultData.viewText = `${child.parentIndex + 1}-${child.index + 1}`;
+                defaultData.bgColor = pannelOption.bgColor;
+                defaultData.textColor = pannelOption.textColor;
 
                 widgetNode.setWidgetSyncedState({
                     widgetMode: "pointer",
@@ -335,8 +340,8 @@ function arrangementChildPannel(list: PannelData) {
 }
 
 // 패널 삭제
-export function deletePannelItem({ widgetData, setWidgetData, data }: { widgetData: WidgetData; setWidgetData: Function; data: CompletePinterArgument }) {
-    // let { targetFunction, targetValue } = getTargetValueAndFunction({ type: data.pannelType, visibleList, invisibleList, trackingList, designList, setVisibleList, setInvisibleList, setTrackingList, setDesignList });
+export function deletePannelItem({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: CompletePinterArgument }) {
+    const pannelOption = widgetOption.panelList.find((item) => item.code === data.pannelType);
 
     if (data.isChild === true) {
         const pannelData = data.pannelData as ChildPannelData;
@@ -366,8 +371,10 @@ export function deletePannelItem({ widgetData, setWidgetData, data }: { widgetDa
         }
     });
 
-    widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType]);
-    setWidgetData(widgetData);
+    if (pannelOption !== undefined) {
+        widgetData[data.pannelType] = arrangementPannel(widgetData[data.pannelType], pannelOption);
+        setWidgetData(widgetData);
+    }
 }
 
 // 데이터 내보내기
@@ -593,4 +600,28 @@ export function dateFormat(value: Date) {
     }
 
     return `${year}-${month}-${day}`;
+}
+
+export function arrangementWidgetData({ widgetData, setWidgetData, widgetOption }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption }) {
+    const newData: WidgetData = {};
+
+    widgetOption.panelList.forEach((option) => {
+        const oldData = widgetData[option.code];
+
+        if (oldData === undefined) {
+            newData[option.code] = [];
+        } else {
+            newData[option.code] = oldData;
+        }
+    });
+
+    for (let [key, value] of Object.entries(newData)) {
+        const pannelOption = widgetOption.panelList.find((item) => item.code === key);
+
+        if (pannelOption !== undefined) {
+            newData[key] = arrangementPannel(newData[key], pannelOption);
+        }
+    }
+
+    setWidgetData(newData);
 }
