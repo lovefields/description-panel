@@ -189,6 +189,7 @@ function plannerWidget() {
                 if (msg.type === "message") {
                     figma.notify(data.text, {
                         error: data.error ?? false,
+                        timeout: data.error ? 5000 : null,
                     });
                 }
 
@@ -266,7 +267,9 @@ function plannerWidget() {
                 // 설정
                 if (propertyName === "setting") {
                     if (figma.payments?.status.type === "UNPAID") {
-                        figma.payments?.initiateCheckoutAsync();
+                        await figma.payments?.initiateCheckoutAsync({
+                            interstitial: "SKIP",
+                        });
                     } else {
                         return new Promise((resolve) => {
                             figma.showUI(__uiFiles__.setting, { width: 400, height: 600 });
@@ -334,7 +337,7 @@ function plannerWidget() {
                 }
 
                 if (propertyName === "clone") {
-                    const widgetNode = await figma.getNodeByIdAsync(widgetId) as WidgetNode;
+                    const widgetNode = (await figma.getNodeByIdAsync(widgetId)) as WidgetNode;
                     const parentNode = widgetNode?.parent as BaseNode;
                     const cloneWidgetNode = widgetNode.cloneWidget({
                         widgetMode: "list",

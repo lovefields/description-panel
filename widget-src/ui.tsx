@@ -185,7 +185,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                                 }
 
                                 if (openLogic === true) {
-                                    const widget = await figma.getNodeByIdAsync(widgetId) as WidgetNode;
+                                    const widget = (await figma.getNodeByIdAsync(widgetId)) as WidgetNode;
                                     const { x: clientX, y: clientY } = getMenuPosition(widget, event, widgetOption);
 
                                     setMenuData({
@@ -278,7 +278,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                                 }
 
                                 data.pointerList.forEach(async (nodeId, i) => {
-                                    const widgetNode = await figma.getNodeByIdAsync(nodeId) as WidgetNode | null;
+                                    const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
                                     if (widgetNode !== null) {
                                         let defaultData = {
@@ -532,9 +532,11 @@ export function getMenuStructure({ menuData, setMenuData, widgetData, widgetOpti
                     hoverStyle={{
                         fill: "#6436EA",
                     }}
-                    onClick={() => {
+                    onClick={async () => {
                         if (figma.payments?.status.type === "UNPAID") {
-                            figma.payments.initiateCheckoutAsync();
+                            await figma.payments?.initiateCheckoutAsync({
+                                interstitial: "SKIP",
+                            });
                             setMenuData({
                                 active: false,
                                 x: 0,

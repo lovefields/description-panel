@@ -112,7 +112,7 @@ export function openViewModal(viewNumber: string, pannelType: string, content: s
 }
 
 // 자식 패널 정보 추가 함수
-export function addChildPannelData({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: AddChildPannelArgument }) {
+export async function addChildPannelData({ widgetData, setWidgetData, widgetOption, data }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: AddChildPannelArgument }) {
     if (figma.payments?.status.type === "PAID") {
         const tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
 
@@ -132,7 +132,9 @@ export function addChildPannelData({ widgetData, setWidgetData, widgetOption, da
 
         setWidgetData(tempData);
     } else {
-        figma.payments?.initiateCheckoutAsync();
+        await figma.payments?.initiateCheckoutAsync({
+            interstitial: "SKIP",
+        });
     }
 }
 
@@ -200,7 +202,14 @@ export async function goToNumber(list: string[]) {
     });
 
     Promise.all(logic).then((value) => {
-        figma.viewport.scrollAndZoomIntoView(nodeList);
+        if (nodeList.length === 0) {
+            figma.notify("Oops! You didn't have any Pointer.", {
+                error: true,
+                timeout: 5000,
+            });
+        } else {
+            figma.viewport.scrollAndZoomIntoView(nodeList);
+        }
     });
 }
 
@@ -551,12 +560,13 @@ export function setImportData({ data, setWidgetData, setWidgetOption }: { data: 
     } else {
         figma.notify("This file is not Description Panel Export file.", {
             error: true,
+            timeout: 5000,
         });
     }
 }
 
 // 새 데이터 넣기
-export function addNewData({ type, widgetData, widgetOption, setWidgetData }: { type: string; widgetData: WidgetData; widgetOption: WidgetOption; setWidgetData: Function }) {
+export async function addNewData({ type, widgetData, widgetOption, setWidgetData }: { type: string; widgetData: WidgetData; widgetOption: WidgetOption; setWidgetData: Function }) {
     // TODO : 지원하면 변경하기
     // const data = structuredClone(widgetData);
     const data: WidgetData = JSON.parse(JSON.stringify(widgetData));
@@ -596,7 +606,9 @@ export function addNewData({ type, widgetData, widgetOption, setWidgetData }: { 
 
         setWidgetData(data);
     } else {
-        figma.payments?.initiateCheckoutAsync();
+        await figma.payments?.initiateCheckoutAsync({
+            interstitial: "SKIP",
+        });
     }
 }
 
