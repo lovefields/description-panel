@@ -78,25 +78,32 @@ function plannerWidget() {
                 setWidgetData(tempData);
             }
 
-            figma.ui.onmessage = (msg) => {
+            figma.ui.onmessage = async (msg) => {
                 const data = msg.data;
 
                 // 설정 수정
                 if (msg.type === "setSetting") {
-                    setWidgetOption({
-                        fontSize: data.fontSize,
-                        isChanged: true,
-                        panelList: data.panelList,
-                    });
-                    arrangementWidgetData({
-                        widgetData: widgetData,
-                        setWidgetData: setWidgetData,
-                        widgetOption: {
+                    if (figma.payments?.status.type === "UNPAID") {
+                        await figma.payments?.initiateCheckoutAsync({
+                            interstitial: "SKIP",
+                        });
+                    } else {
+                        setWidgetOption({
                             fontSize: data.fontSize,
                             isChanged: true,
                             panelList: data.panelList,
-                        },
-                    });
+                        });
+                        arrangementWidgetData({
+                            widgetData: widgetData,
+                            setWidgetData: setWidgetData,
+                            widgetOption: {
+                                fontSize: data.fontSize,
+                                isChanged: true,
+                                panelList: data.panelList,
+                            },
+                        });
+                    }
+
                     figma.closePlugin();
                 }
 
@@ -266,16 +273,10 @@ function plannerWidget() {
 
                 // 설정
                 if (propertyName === "setting") {
-                    if (figma.payments?.status.type === "UNPAID") {
-                        await figma.payments?.initiateCheckoutAsync({
-                            interstitial: "SKIP",
-                        });
-                    } else {
-                        return new Promise((resolve) => {
-                            figma.showUI(__uiFiles__.setting, { width: 400, height: 600 });
-                            figma.ui.postMessage(widgetOption);
-                        });
-                    }
+                    return new Promise((resolve) => {
+                        figma.showUI(__uiFiles__.setting, { width: 400, height: 600 });
+                        figma.ui.postMessage(widgetOption);
+                    });
                 }
 
                 // 전체 완료 적용
