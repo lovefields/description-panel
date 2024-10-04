@@ -7,16 +7,12 @@
     "containsWidget": true,
     "widgetApi": "1.0.0",
     "ui": {
-        "new": "./ui/new.html",
-        "newChild": "./ui/newChild.html",
-        "edit": "./ui/edit.html",
         "view": "./ui/view.html",
         "import": "./ui/import.html",
-        "export": "./ui/export.html",
         "link": "./ui/link.html",
         "setting": "./ui/setting.html"
     },
-    "documentAccess": "none",
+    "documentAccess": "dynamic-page",
     "permissions": ["activeusers", "payments"],
     "networkAccess": {
         "allowedDomains": ["none"]

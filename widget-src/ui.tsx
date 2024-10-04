@@ -121,22 +121,43 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
         return (
             <AutoLayout name="item" width={"fill-parent"} direction="vertical" key={data.code} fill={"#fff"} stroke={"#E0E0E0"} strokeAlign={"inside"} strokeWidth={Math.round(1 * getScale(widgetOption.fontSize))} spacing={Math.round(20 * getScale(widgetOption.fontSize))} cornerRadius={Math.round(10 * getScale(widgetOption.fontSize))} padding={Math.round(10 * getScale(widgetOption.fontSize))} overflow="visible">
                 <AutoLayout name="top-area" width={"fill-parent"} spacing={"auto"} opacity={data.complete ? 0.3 : 1} overflow="visible">
-                    <AutoLayout
-                        name="pointer"
-                        width={"hug-contents"}
-                        height={Math.round(24 * getScale(widgetOption.fontSize))}
-                        padding={{ horizontal: Math.round(10 * getScale(widgetOption.fontSize)), vertical: 0 }}
-                        fill={bgColor}
-                        cornerRadius={Math.round(8 * getScale(widgetOption.fontSize))}
-                        horizontalAlignItems={"center"}
-                        verticalAlignItems={"center"}
-                        onClick={(event) => {
-                            goToNumber(data.pointerList);
-                        }}
-                    >
-                        <Text name="number" fill={textColor} fontSize={Math.round(widgetOption.fontSize * 1.15)} fontWeight={700}>
-                            {isChild ? `${(data as ChildPannelData).parentIndex + 1}-${data.index + 1}` : String(data.index + 1)}
-                        </Text>
+                    <AutoLayout name="pointer-wrap" spacing={Math.round(5 * getScale(widgetOption.fontSize))} verticalAlignItems="center">
+                        <AutoLayout
+                            name="pointer"
+                            width={"hug-contents"}
+                            height={Math.round(24 * getScale(widgetOption.fontSize))}
+                            padding={{ horizontal: Math.round(10 * getScale(widgetOption.fontSize)), vertical: 0 }}
+                            fill={bgColor}
+                            cornerRadius={Math.round(8 * getScale(widgetOption.fontSize))}
+                            horizontalAlignItems={"center"}
+                            verticalAlignItems={"center"}
+                            onClick={(event) => {
+                                goToNumber(data.pointerList);
+                            }}
+                        >
+                            <Text name="number" fill={textColor} fontFamily="Inter" fontSize={Math.round(widgetOption.fontSize * 1.15)} fontWeight={700}>
+                                {isChild ? `${(data as ChildPannelData).parentIndex + 1}-${data.index + 1}` : String(data.index + 1)}
+                            </Text>
+                        </AutoLayout>
+
+                        <AutoLayout
+                            padding={{
+                                horizontal: 4,
+                                vertical: 2,
+                            }}
+                            fill={bgColor}
+                            opacity={0}
+                            hoverStyle={{
+                                opacity: 1,
+                            }}
+                            onClick={(event) => {
+                                goToNumber(data.pointerList);
+                            }}
+                        >
+                            <Text fill={textColor} fontFamily="Inter" fontSize={Math.round(widgetOption.fontSize * 0.8)} fontWeight={700}>
+                                Click To Go
+                            </Text>
+                        </AutoLayout>
                     </AutoLayout>
 
                     <AutoLayout name="right-aerae" width={"hug-contents"} spacing={Math.round(5 * getScale(widgetOption.fontSize))} verticalAlignItems={"center"} overflow="visible">
@@ -154,7 +175,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                             horizontalAlignItems={"center"}
                             verticalAlignItems={"center"}
                             spacing={Math.round(2 * getScale(widgetOption.fontSize))}
-                            onClick={(event) => {
+                            onClick={async (event) => {
                                 let openLogic = true;
 
                                 if (menuData.active === true) {
@@ -164,7 +185,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                                 }
 
                                 if (openLogic === true) {
-                                    const widget = figma.getNodeById(widgetId) as WidgetNode;
+                                    const widget = await figma.getNodeByIdAsync(widgetId) as WidgetNode;
                                     const { x: clientX, y: clientY } = getMenuPosition(widget, event, widgetOption);
 
                                     setMenuData({
@@ -243,7 +264,7 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                             fontFamily={"Inter"}
                             value={data.content}
                             placeholder="Write Description"
-                            onTextEditEnd={(e) => {
+                            onTextEditEnd={async (e) => {
                                 const textData = e.characters.replaceAll("\n", "\u2028");
 
                                 if (isChild === true) {
@@ -256,8 +277,8 @@ function createPannel({ widgetData, data, type, isChild, menuData, setMenuData, 
                                     listData[data.index].writer = figma.activeUsers[0].name;
                                 }
 
-                                data.pointerList.forEach((nodeId, i) => {
-                                    const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+                                data.pointerList.forEach(async (nodeId, i) => {
+                                    const widgetNode = await figma.getNodeByIdAsync(nodeId) as WidgetNode | null;
 
                                     if (widgetNode !== null) {
                                         let defaultData = {
@@ -434,7 +455,7 @@ export function getMenuStructure({ menuData, setMenuData, widgetData, widgetOpti
                         fill: "#fff",
                     }}
                 >
-                    Link Eidt
+                    Link Edit
                 </Text>
             </AutoLayout>
         );

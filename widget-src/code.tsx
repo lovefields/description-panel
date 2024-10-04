@@ -66,10 +66,6 @@ function plannerWidget() {
         });
 
         useEffect(() => {
-            figma.payments?.setPaymentStatusInDevelopment({ type: "PAID" });
-            // figma.payments?.setPaymentStatusInDevelopment({ type: "UNPAID" });
-            console.log("test", figma.payments?.status.type);
-
             if (Object.keys(widgetData).length === 0) {
                 let tempData: WidgetData = JSON.parse(JSON.stringify(widgetData));
 
@@ -254,7 +250,7 @@ function plannerWidget() {
                     tooltip: "Clone Widget",
                 },
             ],
-            ({ propertyName, propertyValue }) => {
+            async ({ propertyName, propertyValue }) => {
                 // 패널 추가
                 if (propertyName === "add") {
                     if (propertyValue !== undefined && propertyValue !== "") {
@@ -338,7 +334,7 @@ function plannerWidget() {
                 }
 
                 if (propertyName === "clone") {
-                    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+                    const widgetNode = await figma.getNodeByIdAsync(widgetId) as WidgetNode;
                     const parentNode = widgetNode?.parent as BaseNode;
                     const cloneWidgetNode = widgetNode.cloneWidget({
                         widgetMode: "list",

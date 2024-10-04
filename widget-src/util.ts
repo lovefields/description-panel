@@ -137,8 +137,8 @@ export function addChildPannelData({ widgetData, setWidgetData, widgetOption, da
 }
 
 // 포인터 생성 함수
-export function createPinter({ widgetData, setWidgetData, widgetOption, data, widgetId }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: CreatePinterArgument; widgetId: string }) {
-    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+export async function createPinter({ widgetData, setWidgetData, widgetOption, data, widgetId }: { widgetData: WidgetData; setWidgetData: Function; widgetOption: WidgetOption; data: CreatePinterArgument; widgetId: string }) {
+    const widgetNode = (await figma.getNodeByIdAsync(widgetId)) as WidgetNode;
     const parentNode = widgetNode?.parent as BaseNode;
     const panelOption = widgetOption.panelList.find((item) => item.code === data.pannelType);
     let viewText: string = "";
@@ -181,18 +181,27 @@ export function createPinter({ widgetData, setWidgetData, widgetOption, data, wi
 }
 
 // 포인터 이동 함수
-export function goToNumber(list: string[]) {
+export async function goToNumber(list: string[]) {
     const nodeList: WidgetNode[] = [];
+    const logic: Promise<boolean>[] = [];
 
     list.forEach((id) => {
-        const node = figma.getNodeById(id) as WidgetNode | null;
+        logic.push(
+            new Promise(async (resolv) => {
+                const node = (await figma.getNodeByIdAsync(id)) as WidgetNode | null;
 
-        if (node !== null) {
-            nodeList.push(node);
-        }
+                if (node !== null) {
+                    nodeList.push(node);
+                }
+
+                resolv(true);
+            })
+        );
     });
 
-    figma.viewport.scrollAndZoomIntoView(nodeList);
+    Promise.all(logic).then((value) => {
+        figma.viewport.scrollAndZoomIntoView(nodeList);
+    });
 }
 
 // 패널 완료 토글
@@ -293,8 +302,8 @@ function arrangementPannel(list: PannelData[], pannelOption: PannelOption) {
     list.forEach((pannel, index) => {
         pannel.index = index;
         pannel.childList = arrangementChildPannel(pannel, pannelOption);
-        pannel.pointerList.forEach((nodeId) => {
-            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+        pannel.pointerList.forEach(async (nodeId) => {
+            const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
             if (widgetNode !== null) {
                 let defaultData = widgetNode.widgetSyncedState["pointerData"] as PointerData;
@@ -321,8 +330,8 @@ function arrangementChildPannel(list: PannelData, pannelOption: PannelOption) {
         child.index = index;
         child.parentIndex = list.index;
 
-        child.pointerList.forEach((nodeId) => {
-            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+        child.pointerList.forEach(async (nodeId) => {
+            const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
             if (widgetNode !== null) {
                 let defaultData = widgetNode.widgetSyncedState["pointerData"] as PointerData;
@@ -357,8 +366,8 @@ export function deletePannelItem({ widgetData, setWidgetData, widgetOption, data
         widgetData[data.pannelType].splice(pannelData.index, 1);
 
         pannelData.childList.forEach((child: ChildPannelData) => {
-            child.pointerList.forEach((nodeId: string) => {
-                const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+            child.pointerList.forEach(async (nodeId: string) => {
+                const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
                 if (widgetNode !== null) {
                     widgetNode.remove();
@@ -367,8 +376,8 @@ export function deletePannelItem({ widgetData, setWidgetData, widgetOption, data
         });
     }
 
-    data.pannelData.pointerList.forEach((nodeId: string) => {
-        const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+    data.pannelData.pointerList.forEach(async (nodeId: string) => {
+        const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
         if (widgetNode !== null) {
             widgetNode.remove();
@@ -553,11 +562,7 @@ export function addNewData({ type, widgetData, widgetOption, setWidgetData }: { 
     const data: WidgetData = JSON.parse(JSON.stringify(widgetData));
     let sutable: boolean = false;
 
-    if (data[type] === undefined) {
-        data[type] = [];
-    }
-
-    if (data[type].length > 5) {
+    if (data[type].length > 4) {
         if (figma.payments?.status.type === "PAID") {
             sutable = true;
         } else {
@@ -567,9 +572,7 @@ export function addNewData({ type, widgetData, widgetOption, setWidgetData }: { 
         sutable = true;
     }
 
-    if (widgetOption.isChanged === false) {
-        sutable = true;
-    } else {
+    if (widgetOption.isChanged === true) {
         if (figma.payments?.status.type === "PAID") {
             sutable = true;
         } else {
@@ -603,8 +606,8 @@ export function setLinkData({ widgetData, setWidgetData, widgetOption, data }: {
         // 자식의 경우
         widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].linkList = data.linkList;
 
-        widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach((nodeId, i) => {
-            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+        widgetData[data.pannelData.type][(data.pannelData.data as ChildPannelData).parentIndex].childList[data.pannelData.data.index].pointerList.forEach(async (nodeId, i) => {
+            const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
             if (widgetNode !== null) {
                 let defaultData = {
@@ -625,8 +628,8 @@ export function setLinkData({ widgetData, setWidgetData, widgetOption, data }: {
         // 자식이 아닌 경우
         widgetData[data.pannelData.type][data.pannelData.data.index].linkList = data.linkList;
 
-        widgetData[data.pannelData.type][data.pannelData.data.index].pointerList.forEach((nodeId, i) => {
-            const widgetNode = figma.getNodeById(nodeId) as WidgetNode | null;
+        widgetData[data.pannelData.type][data.pannelData.data.index].pointerList.forEach(async (nodeId, i) => {
+            const widgetNode = (await figma.getNodeByIdAsync(nodeId)) as WidgetNode | null;
 
             if (widgetNode !== null) {
                 let defaultData = {
