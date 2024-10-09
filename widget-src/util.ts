@@ -555,6 +555,12 @@ export function setImportData({ data, setWidgetData, setWidgetOption }: { data: 
             data.setting.isChanged = true;
         }
 
+        if (figma.payments?.status.type === "UNPAID") {
+            for (let [key, value] of Object.entries(data.descriptionData)) {
+                data.descriptionData[key] = data.descriptionData[key].slice(0, 5);
+            }
+        }
+
         setWidgetOption(data.setting);
         setWidgetData(data.descriptionData);
     } else {
