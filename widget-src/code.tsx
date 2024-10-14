@@ -56,6 +56,7 @@ function plannerWidget() {
             targetIdx: -1,
             targetParentIdx: null,
         });
+        const [addOptionList, setAddOptionList] = useSyncedState<{ option: string; label: string }[]>("addOptionList", [{ option: "", label: "Add New" }]);
         const widgetId: string = useWidgetNodeId();
         const widgetWidth = getLayoutSize(widgetData, widgetOption);
         const menuStructure = getMenuStructure({
@@ -194,10 +195,16 @@ function plannerWidget() {
 
                 // 메세지 표기
                 if (msg.type === "message") {
-                    figma.notify(data.text, {
-                        error: data.error ?? false,
-                        timeout: data.error ? 5000 : null,
-                    });
+                    if (data.error === true) {
+                        figma.notify(data.text, {
+                            error: true,
+                        });
+                    } else {
+                        figma.notify(data.text, {
+                            error: false,
+                            timeout: 5000,
+                        });
+                    }
                 }
 
                 if (msg.type === "close") {
@@ -256,6 +263,14 @@ function plannerWidget() {
                     itemType: "action",
                     propertyName: "clone",
                     tooltip: "Clone Widget",
+                },
+                {
+                    itemType: "separator",
+                },
+                {
+                    itemType: "action",
+                    propertyName: "purchases",
+                    tooltip: "Purchases",
                 },
             ],
             async ({ propertyName, propertyValue }) => {
@@ -352,6 +367,17 @@ function plannerWidget() {
 
                     if (parentNode.type === "SECTION" || parentNode.type === "GROUP" || parentNode.type === "FRAME") {
                         parentNode.appendChild(cloneWidgetNode);
+                    }
+                }
+
+                if (propertyName === "purchases") {
+                    if (figma.payments?.status.type === "UNPAID") {
+                        await figma.payments.initiateCheckoutAsync({ interstitial: "SKIP" });
+                    } else {
+                        figma.notify("You have already made a purchase. Thank you.", {
+                            error: false,
+                            timeout: 5000,
+                        });
                     }
                 }
             }
