@@ -1,5 +1,5 @@
 import "./type.d.ts";
-import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, arrangementWidgetData, setImportData } from "./util";
+import { getLayoutSize, addNewData, openViewModal, getScale, setLinkData, createPinter, addChildPannelData, setPannelComplete, setAllPannelCompleteStatus, movePannelItem, deletePannelItem, arrangementWidgetData, setImportData, isEmptyList } from "./util";
 import { getListStructure, getMenuStructure, makePointerStructure } from "./ui";
 
 const { widget } = figma;
@@ -56,7 +56,7 @@ function plannerWidget() {
             targetIdx: -1,
             targetParentIdx: null,
         });
-        const [addOptionList, setAddOptionList] = useSyncedState<{ option: string; label: string }[]>("addOptionList", [{ option: "", label: "Add New" }]);
+        // const [addOptionList, setAddOptionList] = useSyncedState<{ option: string; label: string }[]>("addOptionList", [{ option: "", label: "Add New" }]);
         const widgetId: string = useWidgetNodeId();
         const widgetWidth = getLayoutSize(widgetData, widgetOption);
         const menuStructure = getMenuStructure({
@@ -241,6 +241,11 @@ function plannerWidget() {
                 },
                 {
                     itemType: "action",
+                    propertyName: "create-all-pointer",
+                    tooltip: "Create All Pointer",
+                },
+                {
+                    itemType: "action",
                     propertyName: "complete",
                     tooltip: "Complete All",
                 },
@@ -292,6 +297,47 @@ function plannerWidget() {
                         figma.showUI(__uiFiles__.setting, { width: 400, height: 600 });
                         figma.ui.postMessage(widgetOption);
                     });
+                }
+
+                // 모든 포인터 만들기
+                if (propertyName === "create-all-pointer") {
+                    if (isEmptyList(widgetData) === true) {
+                        figma.notify("This widget didn't habe list.");
+                    } else {
+                        for (let [key, value] of Object.entries(widgetData)) {
+                            if (value.length !== 0) {
+                                value.forEach((pannel) => {
+                                    createPinter({
+                                        widgetData: widgetData,
+                                        setWidgetData: setWidgetData,
+                                        widgetOption: widgetOption,
+                                        data: {
+                                            pannelType: key,
+                                            isChild: false,
+                                            pannelData: pannel,
+                                        },
+                                        widgetId: widgetId,
+                                    });
+                                    figma.closePlugin();
+
+                                    pannel.childList.forEach((child) => {
+                                        createPinter({
+                                            widgetData: widgetData,
+                                            setWidgetData: setWidgetData,
+                                            widgetOption: widgetOption,
+                                            data: {
+                                                pannelType: key,
+                                                isChild: true,
+                                                pannelData: child,
+                                            },
+                                            widgetId: widgetId,
+                                        });
+                                        figma.closePlugin();
+                                    });
+                                });
+                            }
+                        }
+                    }
                 }
 
                 // 전체 완료 적용
