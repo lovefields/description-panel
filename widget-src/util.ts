@@ -612,9 +612,7 @@ export async function addNewData({ type, widgetData, widgetOption, setWidgetData
 
         setWidgetData(data);
     } else {
-        await figma.payments?.initiateCheckoutAsync({
-            interstitial: "SKIP",
-        });
+        await figma.notify("Sorry, free users can't make more than 6 panels.");
     }
 }
 
